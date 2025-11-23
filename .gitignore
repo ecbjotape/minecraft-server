@@ -1,0 +1,32 @@
+# Arquivos de chaves SSH
+*.pem
+*.key
+*.ppk
+
+# Arquivos de configuração pessoal
+.env
+config.sh
+
+# Arquivos de log
+*.log
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Backups
+*.bak
+*.backup
+*~
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
