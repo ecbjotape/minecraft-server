@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       details: err.message || String(error),
       errorName: err.name,
       errorCode: err.code,
-      stack: err.stack?.split('\n').slice(0, 3),
+      stack: err.stack?.split("\n").slice(0, 3),
     });
   }
 }
