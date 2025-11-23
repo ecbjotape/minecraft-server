@@ -6,7 +6,14 @@
           <div class="minecraft-icon">⛏️</div>
           <h1>Minecraft Dashboard</h1>
         </div>
-        <div class="server-info">
+        <div class="header-actions">
+          <button
+            @click="toggleTheme"
+            class="theme-toggle"
+            :title="isDarkTheme ? 'Tema Claro' : 'Tema Escuro'"
+          >
+            <span class="theme-icon">{{ isDarkTheme ? "☀️" : "🌙" }}</span>
+          </button>
           <span class="ip-badge">{{ serverIP }}</span>
         </div>
       </div>
@@ -180,6 +187,7 @@ const playersOnline = ref("0/20");
 const serverIP = ref("Carregando...");
 const logs = ref<Log[]>([]);
 const notification = ref<Notification | null>(null);
+const isDarkTheme = ref(true);
 
 // Computed
 const serverStatus = computed(() => {
@@ -234,6 +242,17 @@ const showNotification = (message: string, type: Notification["type"]) => {
 const clearLogs = () => {
   logs.value = [];
   addLog("Logs limpos", "info");
+};
+
+const toggleTheme = () => {
+  isDarkTheme.value = !isDarkTheme.value;
+  const theme = isDarkTheme.value ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+  addLog(
+    `Tema alterado para ${isDarkTheme.value ? "escuro" : "claro"}`,
+    "info"
+  );
 };
 
 const startEC2 = async () => {
@@ -388,6 +407,11 @@ const loadStatus = async () => {
 
 // Lifecycle
 onMounted(async () => {
+  // Carregar tema salvo
+  const savedTheme = localStorage.getItem("theme") || "dark";
+  isDarkTheme.value = savedTheme === "dark";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+
   addLog("Dashboard carregado", "success");
 
   // Busca configurações do servidor
@@ -447,6 +471,42 @@ onMounted(async () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.theme-toggle {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.5rem;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 15px rgba(96, 165, 250, 0.4);
+}
+
+.theme-icon {
+  animation: none;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:active .theme-icon {
+  transform: rotate(360deg);
 }
 
 .ip-badge {
