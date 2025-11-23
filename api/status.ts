@@ -1,6 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { EC2Client, DescribeInstancesCommand } from "@aws-sdk/client-ec2";
-import { SSMClient, SendCommandCommand, GetCommandInvocationCommand } from "@aws-sdk/client-ssm";
+import {
+  SSMClient,
+  SendCommandCommand,
+  GetCommandInvocationCommand,
+} from "@aws-sdk/client-ssm";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
@@ -66,14 +70,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         });
 
-        // Comando para verificar se o Minecraft está rodando
+        // Comando para verificar se o Minecraft está rodando e contar jogadores
         const checkCommand = new SendCommandCommand({
           InstanceIds: [INSTANCE_ID],
           DocumentName: "AWS-RunShellScript",
           Parameters: {
             commands: [
-              "if screen -list | grep -q 'minecraft'; then echo 'ONLINE'; else echo 'OFFLINE'; fi",
-              "if screen -list | grep -q 'minecraft'; then echo 'Players: 0/20'; fi",
+              "#!/bin/bash",
+              "# Verifica se screen minecraft existe",
+              "if screen -list | grep -q 'minecraft'; then",
+              "  echo 'STATUS:ONLINE'",
+              "  # Tenta verificar se o processo java está rodando",
+              "  if pgrep -f 'minecraft_server.jar' > /dev/null; then",
+              "    echo 'PROCESS:RUNNING'",
+              "  fi",
+              "  # TODO: Contar jogadores reais dos logs",
+              "  echo 'PLAYERS:0/20'",
+              "else",
+              "  echo 'STATUS:OFFLINE'",
+              "fi",
             ],
           },
         });
@@ -82,26 +97,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const commandId = ssmResponse.Command?.CommandId;
 
         if (commandId) {
-          // Aguarda um pouco para o comando executar
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Aguarda mais tempo para garantir que o comando executou
+          await new Promise((resolve) => setTimeout(resolve, 3000));
 
-          // Busca o resultado do comando
-          const resultCommand = new GetCommandInvocationCommand({
-            CommandId: commandId,
-            InstanceId: INSTANCE_ID,
-          });
+          // Tenta buscar o resultado com retry
+          let attempts = 0;
+          let result = null;
 
-          const result = await ssmClient.send(resultCommand);
-          const output = result.StandardOutputContent || "";
+          while (attempts < 3) {
+            try {
+              const resultCommand = new GetCommandInvocationCommand({
+                CommandId: commandId,
+                InstanceId: INSTANCE_ID,
+              });
 
-          if (output.includes("ONLINE")) {
-            minecraftStatus = "online";
-            
-            // Tenta extrair número de jogadores do output
-            const playersMatch = output.match(/Players:\s*(\d+)\/(\d+)/);
-            if (playersMatch) {
-              playersOnline = playersMatch[1];
-              maxPlayers = playersMatch[2];
+              result = await ssmClient.send(resultCommand);
+              
+              if (result.Status === "Success" || result.Status === "Failed") {
+                break;
+              }
+
+              // Se ainda está em execução, aguarda mais um pouco
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+              attempts++;
+            } catch (err) {
+              attempts++;
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+
+          if (result) {
+            const output = result.StandardOutputContent || "";
+            console.log("SSM Output:", output);
+
+            if (output.includes("STATUS:ONLINE") || output.includes("PROCESS:RUNNING")) {
+              minecraftStatus = "online";
+
+              // Tenta extrair número de jogadores
+              const playersMatch = output.match(/PLAYERS:(\d+)\/(\d+)/);
+              if (playersMatch) {
+                playersOnline = playersMatch[1];
+                maxPlayers = playersMatch[2];
+              }
             }
           }
         }

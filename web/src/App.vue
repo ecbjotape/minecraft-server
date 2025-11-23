@@ -370,10 +370,16 @@ const loadStatus = async () => {
       playersOnline.value = data.playerCount;
     }
 
-    addLog(`Status - EC2: ${data.ec2State}, Minecraft: ${data.minecraftStatus}`, "info");
+    addLog(
+      `Status - EC2: ${data.ec2State}, Minecraft: ${data.minecraftStatus}`,
+      "info"
+    );
 
     if (data.isRunning && data.minecraftStatus === "online") {
-      addLog(`Servidor online com ${data.playersOnline} jogador(es)`, "success");
+      addLog(
+        `Servidor online com ${data.playersOnline} jogador(es)`,
+        "success"
+      );
     }
   } catch (error) {
     addLog("Erro ao carregar status: " + (error as Error).message, "error");
