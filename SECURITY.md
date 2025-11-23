@@ -5,6 +5,7 @@
 **NUNCA commite os seguintes arquivos:**
 
 ### Arquivos Protegidos pelo .gitignore
+
 - ✅ `.env` - Suas configurações locais
 - ✅ `*.pem` - Chaves SSH privadas
 - ✅ `*.key` - Outras chaves privadas
@@ -14,6 +15,7 @@
 ### Informações Sensíveis
 
 ❌ **NUNCA exponha:**
+
 1. **INSTANCE_ID** - ID da sua instância EC2
 2. **EIP** (Elastic IP) - IP público do servidor
 3. **PEM_PATH** - Caminho ou conteúdo da chave SSH
@@ -31,6 +33,7 @@ cp .env.example .env
 ```
 
 Edite `.env` com seus dados reais:
+
 ```bash
 INSTANCE_ID=i-038eaed995b5e484f
 EIP=3.133.214.110
@@ -55,8 +58,9 @@ AWS_REGION=us-east-1
 ### 3. IP no Frontend
 
 Edite `web/src/App.vue` e atualize:
+
 ```typescript
-const serverIP = ref("SEU-IP-AQUI");  // ← Substitua pelo seu IP
+const serverIP = ref("SEU-IP-AQUI"); // ← Substitua pelo seu IP
 ```
 
 ## 🔍 Verificar Antes de Commitar
@@ -78,6 +82,7 @@ git rm --cached .env
 ## 🚨 Se Expor Dados Acidentalmente
 
 ### 1. Remova do Git Imediatamente
+
 ```bash
 # Remova o arquivo
 git rm --cached .env
@@ -92,11 +97,13 @@ git push --force
 ```
 
 ### 2. Revogue as Credenciais
+
 - ⚠️ **AWS Keys**: Desative imediatamente no IAM Console
 - ⚠️ **SSH Keys**: Gere um novo par de chaves
 - ⚠️ **Tokens**: Revogue e gere novos
 
 ### 3. Limpe o Histórico (se necessário)
+
 ```bash
 # Use BFG Repo Cleaner ou git filter-branch
 # Consulte: https://rtyley.github.io/bfg-repo-cleaner/
@@ -105,6 +112,7 @@ git push --force
 ## 🛡️ Boas Práticas
 
 ### 1. Use IAM Roles com Permissões Mínimas
+
 ```json
 {
   "Version": "2012-10-17",
@@ -123,19 +131,24 @@ git push --force
 ```
 
 ### 2. Implemente Autenticação no Frontend
+
 Para produção, adicione:
+
 - 🔑 Login com senha
 - 🔐 JWT tokens
 - 👥 Sistema de usuários
 - 📱 2FA (autenticação de dois fatores)
 
 ### 3. Use Secrets Manager
+
 Considere usar:
+
 - AWS Secrets Manager
 - AWS Systems Manager Parameter Store
 - HashiCorp Vault
 
 ### 4. Monitore Acessos
+
 - 📊 CloudWatch Logs
 - 🔔 SNS Notifications
 - 🚨 CloudTrail para auditoria
