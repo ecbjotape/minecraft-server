@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@vercel/node": "^3.0.0"
+    "@vercel/node": "^3.0.0",
+    "@aws-sdk/client-ec2": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

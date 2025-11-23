@@ -1,8 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { exec } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
+import { EC2Client, StartInstancesCommand } from "@aws-sdk/client-ec2";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -10,25 +7,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const instanceId = process.env.INSTANCE_ID;
+    const { INSTANCE_ID, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } = process.env;
 
-    if (!instanceId) {
-      return res.status(500).json({ error: "INSTANCE_ID not configured" });
+    if (!INSTANCE_ID || !AWS_REGION || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+      return res.status(500).json({ error: "AWS credentials not configured" });
     }
 
-    // Execute AWS CLI command
-    const { stdout, stderr } = await execAsync(
-      `aws ec2 start-instances --instance-ids ${instanceId}`
-    );
+    const ec2Client = new EC2Client({
+      region: AWS_REGION,
+      credentials: {
+        accessKeyId: AWS_ACCESS_KEY_ID,
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
+      },
+    });
 
-    if (stderr) {
-      console.error("AWS CLI Error:", stderr);
-    }
+    const command = new StartInstancesCommand({
+      InstanceIds: [INSTANCE_ID],
+    });
+
+    const response = await ec2Client.send(command);
 
     return res.status(200).json({
       success: true,
       message: "EC2 instance starting",
-      output: stdout,
+      data: response.StartingInstances,
     });
   } catch (error) {
     console.error("Error starting EC2:", error);
