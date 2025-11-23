@@ -177,7 +177,7 @@ const currentAction = ref("");
 const ec2Status = ref<"stopped" | "running" | "pending">("stopped");
 const minecraftStatus = ref<"offline" | "online" | "starting">("offline");
 const playersOnline = ref("0/20");
-const serverIP = ref("SEU-IP-AQUI");
+const serverIP = ref("Carregando...");
 const logs = ref<Log[]>([]);
 const notification = ref<Notification | null>(null);
 
@@ -343,8 +343,17 @@ const stopEC2 = async () => {
 };
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   addLog("Dashboard carregado", "success");
+
+  // Busca configurações do servidor
+  try {
+    const response = await axios.get("/api/config");
+    serverIP.value = response.data.serverIP || "N/A";
+  } catch (error) {
+    serverIP.value = "N/A";
+    addLog("Não foi possível carregar IP do servidor", "warning");
+  }
 });
 </script>
 
