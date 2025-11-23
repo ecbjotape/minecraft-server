@@ -1,12 +1,25 @@
 # 🎮 Minecraft Server AWS Manager
 
-Scripts para gerenciar um servidor Minecraft hospedado em uma instância EC2 da AWS.
+Gerenciador completo para servidor Minecraft hospedado em uma instância EC2 da AWS, com interface web moderna e scripts de linha de comando.
 
 ## 📋 Descrição
 
-Este projeto contém scripts bash para facilitar o gerenciamento de um servidor Minecraft rodando em uma instância Amazon EC2. Os scripts permitem iniciar/parar a instância EC2 e iniciar o servidor Minecraft remotamente via SSH.
+Este projeto oferece duas formas de gerenciar seu servidor Minecraft:
+
+1. **🌐 Interface Web** - Dashboard moderno com Vue.js + TypeScript hospedado na Vercel
+2. **⌨️ Scripts CLI** - Scripts bash para gerenciamento via terminal
 
 ## ✨ Funcionalidades
+
+### Interface Web
+
+- 🎨 **Dashboard Moderno** - Interface intuitiva e responsiva
+- 🚀 **Início Rápido** - Inicia EC2 + Servidor com um clique
+- 📊 **Monitoramento em Tempo Real** - Status do servidor e logs
+- 🔔 **Notificações** - Alertas de sucesso/erro
+- 📱 **Responsivo** - Funciona em desktop e mobile
+
+### Scripts CLI
 
 - 🚀 **Iniciar instância EC2** - Liga a instância AWS
 - 🛑 **Parar instância EC2** - Desliga a instância AWS para economizar custos
@@ -62,43 +75,71 @@ chmod +x *.sh
 
 ## 🚀 Uso
 
-### Iniciar a instância EC2
+### 🌐 Interface Web
 
-```bash
-./start-ec2.sh
+Acesse o dashboard web hospedado na Vercel:
+
+```
+https://seu-projeto.vercel.app
 ```
 
-### Iniciar o servidor Minecraft
+No dashboard você pode:
+
+- Ver status do servidor em tempo real
+- Iniciar/parar EC2 com um clique
+- Iniciar servidor Minecraft
+- Usar o botão "Início Rápido" para tudo de uma vez
+- Acompanhar logs em tempo real
+
+### ⌨️ Scripts CLI
+
+#### Iniciar a instância EC2
+
+```bash
+sh start-ec2.sh
+```
+
+#### Iniciar o servidor Minecraft
 
 Aguarde alguns segundos após iniciar a EC2, depois execute:
 
 ```bash
-./start-server.sh
+sh start-server.sh
 ```
 
-### Parar a instância EC2
+#### Parar a instância EC2
 
 Quando terminar de jogar:
 
 ```bash
-./stop-ec2.sh
+sh stop-ec2.sh
 ```
 
 ## 📁 Estrutura do Projeto
 
 ```
 minecraft-server/
-├── README.md           # Este arquivo
-├── LICENSE            # Licença MIT
-├── .env.example       # Exemplo de configuração
-├── .env               # Suas configurações (não versionado)
-├── .gitignore         # Arquivos ignorados pelo Git
+├── web/                    # Frontend Vue.js
+│   ├── src/
+│   │   ├── App.vue        # Componente principal do dashboard
+│   │   ├── main.ts        # Entry point
+│   │   └── style.css      # Estilos globais
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── DEPLOY.md          # Guia de deploy
+├── api/                    # Serverless Functions (Vercel)
+│   ├── start-ec2.ts       # API para iniciar EC2
+│   ├── stop-ec2.ts        # API para parar EC2
+│   └── start-server.ts    # API para iniciar Minecraft
 ├── scripts/
-│   └── load_env.sh    # Utilitário para carregar variáveis
-├── start-ec2.sh       # Script para iniciar EC2
-├── start-server.sh    # Script para iniciar servidor Minecraft
-├── stop-ec2.sh        # Script para parar EC2
-└── *.pem              # Chaves SSH (não versionadas)
+│   └── load_env.sh        # Utilitário para carregar variáveis
+├── start-ec2.sh           # Script CLI para iniciar EC2
+├── start-server.sh        # Script CLI para iniciar servidor
+├── stop-ec2.sh            # Script CLI para parar EC2
+├── vercel.json            # Configuração Vercel
+├── .env.example           # Exemplo de configuração
+├── .env                   # Suas configurações (não versionado)
+└── README.md              # Este arquivo
 ```
 
 ## 🔒 Segurança
@@ -119,6 +160,32 @@ O arquivo `.env` é o padrão da indústria para armazenar configurações:
 - ✅ Não é executável, apenas contém variáveis
 - ✅ Validação automática de configurações obrigatórias
 - ✅ Mensagens de erro claras se algo estiver faltando
+
+## 🌐 Deploy na Vercel
+
+Para fazer o deploy da interface web na Vercel, consulte o guia completo em [`web/DEPLOY.md`](web/DEPLOY.md).
+
+**Resumo rápido:**
+
+1. Crie uma conta na [Vercel](https://vercel.com)
+2. Importe este repositório
+3. Configure as variáveis de ambiente
+4. Deploy! 🚀
+
+## 🎨 Tecnologias Utilizadas
+
+### Frontend
+
+- **Vue 3** - Framework JavaScript progressivo
+- **TypeScript** - Tipagem estática
+- **Vite** - Build tool super rápido
+- **CSS3** - Animações e design moderno
+
+### Backend
+
+- **Vercel Serverless Functions** - API serverless
+- **AWS CLI** - Gerenciamento EC2
+- **SSH** - Conexão remota segura
 
 ## 🛠️ Personalização
 
