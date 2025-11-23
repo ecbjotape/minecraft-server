@@ -7,10 +7,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { INSTANCE_ID, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } = process.env;
+    const {
+      INSTANCE_ID,
+      AWS_REGION,
+      AWS_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY,
+    } = process.env;
 
-    if (!INSTANCE_ID || !AWS_REGION || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-      return res.status(500).json({ error: "AWS credentials not configured" });
+    console.log("Environment check:", {
+      hasInstanceId: !!INSTANCE_ID,
+      hasRegion: !!AWS_REGION,
+      hasAccessKey: !!AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!AWS_SECRET_ACCESS_KEY,
+    });
+
+    if (
+      !INSTANCE_ID ||
+      !AWS_REGION ||
+      !AWS_ACCESS_KEY_ID ||
+      !AWS_SECRET_ACCESS_KEY
+    ) {
+      return res.status(500).json({
+        error: "AWS credentials not configured",
+        missing: {
+          instanceId: !INSTANCE_ID,
+          region: !AWS_REGION,
+          accessKey: !AWS_ACCESS_KEY_ID,
+          secretKey: !AWS_SECRET_ACCESS_KEY,
+        },
+      });
     }
 
     const ec2Client = new EC2Client({
@@ -34,9 +59,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     console.error("Error starting EC2:", error);
+    const err = error as any;
     return res.status(500).json({
       error: "Failed to start EC2 instance",
-      details: (error as Error).message,
+      details: err.message || String(error),
+      errorName: err.name,
+      errorCode: err.code,
+      stack: err.stack?.split("\n").slice(0, 3),
     });
   }
 }
