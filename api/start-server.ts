@@ -13,12 +13,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { EIP, USER, PEM_CONTENT } = process.env;
+    const { EIP, USER, PEM_PATH } = process.env;
 
     console.log("Environment check:", {
       hasEIP: !!EIP,
       hasUser: !!USER,
-      hasPemContent: !!PEM_CONTENT,
+      hasPemContent: !!PEM_PATH,
     });
 
     if (!EIP || !USER) {
@@ -27,18 +27,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         missing: {
           eip: !EIP,
           user: !USER,
-          pemContent: !PEM_CONTENT,
+          pemContent: !PEM_PATH,
         },
       });
     }
 
     // Create temporary PEM file
-    if (!PEM_CONTENT) {
-      return res.status(500).json({ error: "PEM_CONTENT not configured" });
+    if (!PEM_PATH) {
+      return res.status(500).json({ error: "PEM_PATH not configured" });
     }
 
     const tempPemPath = join(tmpdir(), "minecraft-key.pem");
-    writeFileSync(tempPemPath, PEM_CONTENT.replace(/\\n/g, "\n"));
+    writeFileSync(tempPemPath, PEM_PATH.replace(/\\n/g, "\n"));
     chmodSync(tempPemPath, 0o400);
 
     // SSH command to start Minecraft server
