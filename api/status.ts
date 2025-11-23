@@ -83,9 +83,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               "  # Tenta verificar se o processo java está rodando",
               "  if pgrep -f 'minecraft_server.jar' > /dev/null; then",
               "    echo 'PROCESS:RUNNING'",
+              "    # Envia comando 'list' para o servidor e aguarda resposta nos logs",
+              "    screen -S minecraft -X stuff 'list\\n'",
+              "    sleep 1",
+              "    # Busca a última linha com informação de jogadores",
+              "    PLAYER_INFO=$(tail -n 10 ~/minecraft-server/logs/latest.log | grep -oP 'There are \\K\\d+ of a max of \\d+' | tail -1)",
+              "    if [ ! -z \"$PLAYER_INFO\" ]; then",
+              "      ONLINE=$(echo $PLAYER_INFO | cut -d' ' -f1)",
+              "      MAX=$(echo $PLAYER_INFO | cut -d' ' -f5)",
+              "      echo \"PLAYERS:$ONLINE/$MAX\"",
+              "    else",
+              "      echo 'PLAYERS:0/20'",
+              "    fi",
               "  fi",
-              "  # TODO: Contar jogadores reais dos logs",
-              "  echo 'PLAYERS:0/20'",
               "else",
               "  echo 'STATUS:OFFLINE'",
               "fi",
@@ -112,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               });
 
               result = await ssmClient.send(resultCommand);
-              
+
               if (result.Status === "Success" || result.Status === "Failed") {
                 break;
               }
@@ -130,7 +140,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const output = result.StandardOutputContent || "";
             console.log("SSM Output:", output);
 
-            if (output.includes("STATUS:ONLINE") || output.includes("PROCESS:RUNNING")) {
+            if (
+              output.includes("STATUS:ONLINE") ||
+              output.includes("PROCESS:RUNNING")
+            ) {
               minecraftStatus = "online";
 
               // Tenta extrair número de jogadores

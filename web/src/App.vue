@@ -4,7 +4,7 @@
       <div class="header-content">
         <div class="logo">
           <div class="minecraft-icon">⛏️</div>
-          <h1>Minecraft Server Manager</h1>
+          <h1>Minecraft Dashboard</h1>
         </div>
         <div class="server-info">
           <span class="ip-badge">{{ serverIP }}</span>
