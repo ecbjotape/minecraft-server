@@ -342,6 +342,33 @@ const stopEC2 = async () => {
   }
 };
 
+const loadStatus = async () => {
+  try {
+    const response = await axios.get("/api/status");
+    const data = response.data;
+
+    // Atualizar status do EC2
+    if (data.isPending) {
+      ec2Status.value = "pending";
+    } else if (data.isRunning) {
+      ec2Status.value = "running";
+    } else if (data.isStopped) {
+      ec2Status.value = "stopped";
+    }
+
+    addLog(`Status EC2: ${data.state}`, "info");
+
+    // Se a instância está rodando, podemos assumir que o servidor pode estar online
+    if (data.isRunning) {
+      // Aqui você poderia fazer uma chamada adicional para verificar se o Minecraft está rodando
+      // Por enquanto, vamos deixar como offline até ter certeza
+      addLog("Instância EC2 está rodando", "success");
+    }
+  } catch (error) {
+    addLog("Erro ao carregar status: " + (error as Error).message, "error");
+  }
+};
+
 // Lifecycle
 onMounted(async () => {
   addLog("Dashboard carregado", "success");
@@ -354,6 +381,12 @@ onMounted(async () => {
     serverIP.value = "N/A";
     addLog("Não foi possível carregar IP do servidor", "warning");
   }
+
+  // Carrega status atual
+  await loadStatus();
+
+  // Atualiza status a cada 30 segundos
+  setInterval(loadStatus, 30000);
 });
 </script>
 
