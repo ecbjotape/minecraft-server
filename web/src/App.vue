@@ -356,13 +356,24 @@ const loadStatus = async () => {
       ec2Status.value = "stopped";
     }
 
-    addLog(`Status EC2: ${data.state}`, "info");
+    // Atualizar status do Minecraft
+    if (data.minecraftStatus === "online") {
+      minecraftStatus.value = "online";
+    } else if (data.minecraftStatus === "starting") {
+      minecraftStatus.value = "starting";
+    } else {
+      minecraftStatus.value = "offline";
+    }
 
-    // Se a instância está rodando, podemos assumir que o servidor pode estar online
-    if (data.isRunning) {
-      // Aqui você poderia fazer uma chamada adicional para verificar se o Minecraft está rodando
-      // Por enquanto, vamos deixar como offline até ter certeza
-      addLog("Instância EC2 está rodando", "success");
+    // Atualizar contagem de jogadores
+    if (data.playerCount) {
+      playersOnline.value = data.playerCount;
+    }
+
+    addLog(`Status - EC2: ${data.ec2State}, Minecraft: ${data.minecraftStatus}`, "info");
+
+    if (data.isRunning && data.minecraftStatus === "online") {
+      addLog(`Servidor online com ${data.playersOnline} jogador(es)`, "success");
     }
   } catch (error) {
     addLog("Erro ao carregar status: " + (error as Error).message, "error");
