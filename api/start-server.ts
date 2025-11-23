@@ -13,22 +13,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { PEM_PATH, EIP, USER } = process.env;
+    const { EIP, USER, PEM_CONTENT } = process.env;
 
-    if (!PEM_PATH || !EIP || !USER) {
-      return res
-        .status(500)
-        .json({ error: "Environment variables not configured" });
+    console.log("Environment check:", {
+      hasEIP: !!EIP,
+      hasUser: !!USER,
+      hasPemContent: !!PEM_CONTENT,
+    });
+
+    if (!EIP || !USER) {
+      return res.status(500).json({
+        error: "Environment variables not configured",
+        missing: {
+          eip: !EIP,
+          user: !USER,
+          pemContent: !PEM_CONTENT,
+        },
+      });
     }
 
     // Create temporary PEM file
-    const pemContent = process.env.PEM_CONTENT;
-    if (!pemContent) {
+    if (!PEM_CONTENT) {
       return res.status(500).json({ error: "PEM_CONTENT not configured" });
     }
 
     const tempPemPath = join(tmpdir(), "minecraft-key.pem");
-    writeFileSync(tempPemPath, pemContent.replace(/\\n/g, "\n"));
+    writeFileSync(tempPemPath, PEM_CONTENT.replace(/\\n/g, "\n"));
     chmodSync(tempPemPath, 0o400);
 
     // SSH command to start Minecraft server
@@ -57,9 +67,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     console.error("Error starting server:", error);
+    const err = error as any;
     return res.status(500).json({
       error: "Failed to start Minecraft server",
-      details: (error as Error).message,
+      details: err.message || String(error),
+      errorName: err.name,
+      errorCode: err.code,
+      stderr: err.stderr,
+      stdout: err.stdout,
     });
   }
 }
