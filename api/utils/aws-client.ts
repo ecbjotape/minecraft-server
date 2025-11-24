@@ -8,11 +8,7 @@ export interface AWSConfig {
 }
 
 export function validateAWSConfig(): AWSConfig {
-  const {
-    AWS_REGION,
-    AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY,
-  } = process.env;
+  const { AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } = process.env;
 
   const missing: string[] = [];
   if (!AWS_REGION) missing.push("AWS_REGION");

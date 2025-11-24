@@ -11,10 +11,7 @@ import {
   convertToServerInfo,
   createDefaultServerInfo,
 } from "./utils/minecraft-parser";
-import {
-  waitForSSMCommand,
-  extractCommandOutput,
-} from "./utils/ssm-helper";
+import { waitForSSMCommand, extractCommandOutput } from "./utils/ssm-helper";
 
 // Edge cases documented:
 // 1. Missing environment variables
@@ -142,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error("Error getting instance status:", error);
     const err = error as any;
-    
+
     // Edge case: Return detailed error for debugging
     return res.status(500).json({
       error: "Failed to get instance status",

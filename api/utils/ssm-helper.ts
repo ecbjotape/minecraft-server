@@ -45,7 +45,11 @@ export async function waitForSSMCommand(
 
       result = await ssmClient.send(resultCommand);
 
-      console.log(`Attempt ${attempts + 1}/${config.maxAttempts} - Status: ${result.Status}`);
+      console.log(
+        `Attempt ${attempts + 1}/${config.maxAttempts} - Status: ${
+          result.Status
+        }`
+      );
 
       // Command completed (successfully or with failure)
       if (result.Status === "Success" || result.Status === "Failed") {
@@ -64,7 +68,7 @@ export async function waitForSSMCommand(
     } catch (err: any) {
       console.log(`Attempt ${attempts + 1} failed: ${err.message}`);
       attempts++;
-      
+
       // Don't wait on last attempt
       if (attempts < config.maxAttempts) {
         await sleep(config.retryDelay);
