@@ -70,35 +70,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         });
 
-        // Comando para verificar se o Minecraft está rodando e contar jogadores
+        // Comando simplificado para verificar o Minecraft
         const checkCommand = new SendCommandCommand({
           InstanceIds: [INSTANCE_ID],
           DocumentName: "AWS-RunShellScript",
           Parameters: {
             commands: [
-              "#!/bin/bash",
-              "# Verifica se screen minecraft existe",
-              "if screen -list | grep -q 'minecraft'; then",
-              "  echo 'STATUS:ONLINE'",
-              "  # Tenta verificar se o processo java está rodando",
-              "  if pgrep -f 'minecraft_server.jar' > /dev/null; then",
-              "    echo 'PROCESS:RUNNING'",
-              "    # Envia comando 'list' para o servidor e aguarda resposta nos logs",
-              "    screen -S minecraft -X stuff 'list\\n'",
-              "    sleep 1",
-              "    # Busca a última linha com informação de jogadores",
-              "    PLAYER_INFO=$(tail -n 10 ~/minecraft-server/logs/latest.log | grep -oP 'There are \\K\\d+ of a max of \\d+' | tail -1)",
-              '    if [ ! -z "$PLAYER_INFO" ]; then',
-              "      ONLINE=$(echo $PLAYER_INFO | cut -d' ' -f1)",
-              "      MAX=$(echo $PLAYER_INFO | cut -d' ' -f5)",
-              '      echo "PLAYERS:$ONLINE/$MAX"',
-              "    else",
-              "      echo 'PLAYERS:0/20'",
-              "    fi",
-              "  fi",
-              "else",
-              "  echo 'STATUS:OFFLINE'",
-              "fi",
+              "screen -list | grep -q 'minecraft' && echo 'STATUS:ONLINE' || echo 'STATUS:OFFLINE'",
+              "pgrep -f 'minecraft_server.jar' > /dev/null && echo 'PROCESS:RUNNING'",
+              "screen -S minecraft -X stuff 'list\n' 2>/dev/null; sleep 1",
+              "tail -n 10 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null | grep -oP 'There are \\K\\d+ of a max of \\d+' | tail -1 | awk '{print \"PLAYERS:\" $1 \"/\" $5}' || echo 'PLAYERS:0/20'",
             ],
           },
         });
@@ -122,15 +103,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               });
 
               result = await ssmClient.send(resultCommand);
-              
-              console.log(`Attempt ${attempts + 1} - SSM Status:`, result.Status);
+
+              console.log(
+                `Attempt ${attempts + 1} - SSM Status:`,
+                result.Status
+              );
 
               if (result.Status === "Success" || result.Status === "Failed") {
                 break;
               }
 
               // Se ainda está em execução, aguarda mais um pouco
-              if (result.Status === "InProgress" || result.Status === "Pending") {
+              if (
+                result.Status === "InProgress" ||
+                result.Status === "Pending"
+              ) {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 attempts++;
               } else {
