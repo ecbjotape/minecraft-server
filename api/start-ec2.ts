@@ -60,12 +60,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error("Error starting EC2:", error);
     const err = error as any;
-    return res.status(500).json({
-      error: "Failed to start EC2 instance",
+
+    // Treat instance state errors with friendly messages
+    let userMessage = "Failed to start EC2 instance";
+    let statusCode = 500;
+
+    if (err.Code === "IncorrectInstanceState") {
+      userMessage = "A instância já está ligada ou está em transição. Aguarde alguns segundos e tente novamente.";
+      statusCode = 409; // Conflict
+    }
+
+    return res.status(statusCode).json({
+      error: userMessage,
       details: err.message || String(error),
       errorName: err.name,
-      errorCode: err.code,
-      stack: err.stack?.split("\n").slice(0, 3),
+      errorCode: err.Code || err.code,
     });
   }
 }

@@ -363,9 +363,10 @@ const startEC2 = async () => {
       addLog("Instância EC2 iniciada com sucesso!", "success");
       showNotification("EC2 iniciada com sucesso!", "success");
     }, 3000);
-  } catch (error) {
-    addLog("Erro ao iniciar EC2: " + (error as Error).message, "error");
-    showNotification("Erro ao iniciar EC2", "error");
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    addLog("Erro ao iniciar EC2: " + errorMessage, "error");
+    showNotification(errorMessage, "error");
   } finally {
     loading.value = false;
     currentAction.value = "";
@@ -386,10 +387,11 @@ const startServer = async () => {
       addLog("Servidor Minecraft iniciado!", "success");
       showNotification("Servidor online! Bom jogo! 🎮", "success");
     }, 5000);
-  } catch (error) {
+  } catch (error: any) {
     minecraftStatus.value = "offline";
-    addLog("Erro ao iniciar servidor: " + (error as Error).message, "error");
-    showNotification("Erro ao iniciar servidor", "error");
+    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    addLog("Erro ao iniciar servidor: " + errorMessage, "error");
+    showNotification(errorMessage, "error");
   } finally {
     loading.value = false;
     currentAction.value = "";
@@ -422,9 +424,10 @@ const quickStart = async () => {
         currentAction.value = "";
       }, 5000);
     }, 3000);
-  } catch (error) {
-    addLog("Erro no início rápido: " + (error as Error).message, "error");
-    showNotification("Erro no início rápido", "error");
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    addLog("Erro no início rápido: " + errorMessage, "error");
+    showNotification(errorMessage, "error");
     loading.value = false;
     currentAction.value = "";
   }
@@ -446,9 +449,10 @@ const stopEC2 = async () => {
       addLog("EC2 parada com sucesso. Economia ativada! 💰", "success");
       showNotification("Servidor desligado", "info");
     }, 2000);
-  } catch (error) {
-    addLog("Erro ao parar EC2: " + (error as Error).message, "error");
-    showNotification("Erro ao parar EC2", "error");
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    addLog("Erro ao parar EC2: " + errorMessage, "error");
+    showNotification(errorMessage, "error");
   } finally {
     loading.value = false;
     currentAction.value = "";
