@@ -78,8 +78,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             commands: [
               "screen -list | grep -q 'minecraft' && echo 'STATUS:ONLINE' || echo 'STATUS:OFFLINE'",
               "pgrep -f 'minecraft_server.jar' > /dev/null && echo 'PROCESS:RUNNING'",
-              "screen -S minecraft -X stuff 'list\n' 2>/dev/null; sleep 1",
-              "tail -n 10 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null | grep -oP 'There are \\K\\d+ of a max of \\d+' | tail -1 | awk '{print \"PLAYERS:\" $1 \"/\" $5}' || echo 'PLAYERS:0/20'",
+              "screen -S minecraft -X stuff 'list\\n' 2>/dev/null; sleep 1",
+              "tail -n 20 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null | grep -oE 'There are [0-9]+ of a max of [0-9]+' | tail -1 | sed -E 's/There are ([0-9]+) of a max of ([0-9]+)/PLAYERS:\\1\\/\\2/' || echo 'PLAYERS:0/20'",
             ],
           },
         });
