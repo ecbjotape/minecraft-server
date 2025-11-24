@@ -107,14 +107,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const commandId = ssmResponse.Command?.CommandId;
 
         if (commandId) {
-          // Aguarda mais tempo para garantir que o comando executou
-          await new Promise((resolve) => setTimeout(resolve, 3000));
+          // Aguarda mais tempo para garantir que o comando executou (aumentado para 5 segundos)
+          await new Promise((resolve) => setTimeout(resolve, 5000));
 
-          // Tenta buscar o resultado com retry
+          // Tenta buscar o resultado com retry (até 5 tentativas)
           let attempts = 0;
           let result = null;
 
-          while (attempts < 3) {
+          while (attempts < 5) {
             try {
               const resultCommand = new GetCommandInvocationCommand({
                 CommandId: commandId,
@@ -122,23 +122,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               });
 
               result = await ssmClient.send(resultCommand);
+              
+              console.log(`Attempt ${attempts + 1} - SSM Status:`, result.Status);
 
               if (result.Status === "Success" || result.Status === "Failed") {
                 break;
               }
 
               // Se ainda está em execução, aguarda mais um pouco
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+              if (result.Status === "InProgress" || result.Status === "Pending") {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                attempts++;
+              } else {
+                break;
+              }
+            } catch (err: any) {
+              console.log(`Attempt ${attempts + 1} failed:`, err.message);
               attempts++;
-            } catch (err) {
-              attempts++;
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+              await new Promise((resolve) => setTimeout(resolve, 1500));
             }
           }
 
           if (result) {
             const output = result.StandardOutputContent || "";
+            const errorOutput = result.StandardErrorContent || "";
             console.log("SSM Output:", output);
+            if (errorOutput) console.log("SSM Error:", errorOutput);
 
             if (
               output.includes("STATUS:ONLINE") ||
@@ -153,6 +162,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 maxPlayers = playersMatch[2];
               }
             }
+          } else {
+            console.log("SSM command did not complete in time");
           }
         }
       } catch (ssmError) {
