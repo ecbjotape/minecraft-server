@@ -14,7 +14,17 @@
           >
             <span class="theme-icon">{{ isDarkTheme ? "☀️" : "🌙" }}</span>
           </button>
-          <span class="ip-badge">{{ serverIP }}</span>
+          <div class="ip-container">
+            <span class="ip-badge">{{ serverIP }}</span>
+            <button
+              @click="copyIP"
+              class="copy-button"
+              :title="'Copiar IP'"
+              :disabled="serverIP === 'Carregando...'"
+            >
+              <span class="copy-icon">{{ copied ? '✓' : '📋' }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -204,9 +214,19 @@
                 <span class="modal-info-label">Jogadores Conectados</span>
                 <span class="modal-info-value">{{ playersOnline }}</span>
               </div>
-              <div class="modal-info-item">
+              <div class="modal-info-item ip-item">
                 <span class="modal-info-label">IP do Servidor</span>
-                <span class="modal-info-value mono">{{ serverIP }}</span>
+                <div class="modal-ip-container">
+                  <span class="modal-info-value mono">{{ serverIP }}</span>
+                  <button
+                    @click="copyIP"
+                    class="modal-copy-button"
+                    :title="'Copiar IP'"
+                    :disabled="serverIP === 'Carregando...'"
+                  >
+                    {{ copied ? '✓' : '📋' }}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -282,6 +302,7 @@ const isDarkTheme = ref(true);
 const showModal = ref(false);
 const playerNames = ref<string[]>([]);
 const serverVersion = ref("Unknown");
+const copied = ref(false);
 
 // Computed
 const serverStatus = computed(() => {
@@ -349,6 +370,24 @@ const toggleTheme = () => {
   );
 };
 
+const copyIP = async () => {
+  if (serverIP.value === "Carregando...") return;
+  
+  try {
+    await navigator.clipboard.writeText(serverIP.value);
+    copied.value = true;
+    showNotification("IP copiado para a área de transferência!", "success");
+    addLog(`IP ${serverIP.value} copiado`, "info");
+    
+    setTimeout(() => {
+      copied.value = false;
+    }, 2000);
+  } catch (error) {
+    showNotification("Erro ao copiar IP", "error");
+    addLog("Erro ao copiar IP para área de transferência", "error");
+  }
+};
+
 const startEC2 = async () => {
   loading.value = true;
   currentAction.value = "start-ec2";
@@ -364,7 +403,8 @@ const startEC2 = async () => {
       showNotification("EC2 iniciada com sucesso!", "success");
     }, 3000);
   } catch (error: any) {
-    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    const errorMessage =
+      error.response?.data?.error || error.message || "Erro desconhecido";
     addLog("Erro ao iniciar EC2: " + errorMessage, "error");
     showNotification(errorMessage, "error");
   } finally {
@@ -389,7 +429,8 @@ const startServer = async () => {
     }, 5000);
   } catch (error: any) {
     minecraftStatus.value = "offline";
-    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    const errorMessage =
+      error.response?.data?.error || error.message || "Erro desconhecido";
     addLog("Erro ao iniciar servidor: " + errorMessage, "error");
     showNotification(errorMessage, "error");
   } finally {
@@ -429,7 +470,10 @@ const quickStart = async () => {
             currentAction.value = "";
           }, 5000);
         } catch (serverError: any) {
-          const errorMessage = serverError.response?.data?.error || serverError.message || "Erro desconhecido";
+          const errorMessage =
+            serverError.response?.data?.error ||
+            serverError.message ||
+            "Erro desconhecido";
           addLog("Erro ao iniciar servidor: " + errorMessage, "error");
           showNotification(errorMessage, "error");
           loading.value = false;
@@ -438,7 +482,8 @@ const quickStart = async () => {
       }, 5000); // Additional 5 seconds for SSM Agent
     }, 10000); // Increased from 3 to 10 seconds
   } catch (error: any) {
-    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    const errorMessage =
+      error.response?.data?.error || error.message || "Erro desconhecido";
     addLog("Erro no início rápido: " + errorMessage, "error");
     showNotification(errorMessage, "error");
     loading.value = false;
@@ -463,7 +508,8 @@ const stopEC2 = async () => {
       showNotification("Servidor desligado", "info");
     }, 2000);
   } catch (error: any) {
-    const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
+    const errorMessage =
+      error.response?.data?.error || error.message || "Erro desconhecido";
     addLog("Erro ao parar EC2: " + errorMessage, "error");
     showNotification(errorMessage, "error");
   } finally {
@@ -646,6 +692,12 @@ onMounted(async () => {
   transform: rotate(360deg);
 }
 
+.ip-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .ip-badge {
   background: rgba(96, 165, 250, 0.2);
   color: var(--accent-blue);
@@ -654,6 +706,39 @@ onMounted(async () => {
   font-family: "Courier New", monospace;
   font-weight: 600;
   border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.copy-button {
+  background: rgba(96, 165, 250, 0.2);
+  color: var(--accent-blue);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+}
+
+.copy-button:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.3);
+  transform: scale(1.05);
+}
+
+.copy-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.copy-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.copy-icon {
+  font-size: 1.2rem;
 }
 
 .main-content {
@@ -1061,6 +1146,45 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.modal-info-item.ip-item {
+  position: relative;
+}
+
+.modal-ip-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-copy-button {
+  background: rgba(96, 165, 250, 0.2);
+  color: var(--accent-blue);
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+}
+
+.modal-copy-button:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.3);
+  transform: scale(1.05);
+}
+
+.modal-copy-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.modal-copy-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .modal-info-label {
