@@ -408,22 +408,35 @@ const quickStart = async () => {
     ec2Status.value = "pending";
     await axios.post("/api/start-ec2");
 
+    // Wait longer for EC2 to be fully ready (increased from 3s to 10s)
+    addLog("Aguardando EC2 ficar pronta (10 segundos)...", "info");
     setTimeout(async () => {
       ec2Status.value = "running";
-      addLog("EC2 rodando, iniciando Minecraft...", "success");
+      addLog("EC2 rodando, aguardando SSM Agent...", "success");
 
-      // Start Minecraft
-      minecraftStatus.value = "starting";
-      await axios.post("/api/start-server");
+      // Wait additional time for SSM Agent to be ready
+      setTimeout(async () => {
+        try {
+          addLog("Iniciando Minecraft...", "info");
+          minecraftStatus.value = "starting";
+          await axios.post("/api/start-server");
 
-      setTimeout(() => {
-        minecraftStatus.value = "online";
-        addLog("Tudo pronto! Servidor online! 🎉", "success");
-        showNotification("Servidor totalmente online!", "success");
-        loading.value = false;
-        currentAction.value = "";
-      }, 5000);
-    }, 3000);
+          setTimeout(() => {
+            minecraftStatus.value = "online";
+            addLog("Tudo pronto! Servidor online! 🎉", "success");
+            showNotification("Servidor totalmente online!", "success");
+            loading.value = false;
+            currentAction.value = "";
+          }, 5000);
+        } catch (serverError: any) {
+          const errorMessage = serverError.response?.data?.error || serverError.message || "Erro desconhecido";
+          addLog("Erro ao iniciar servidor: " + errorMessage, "error");
+          showNotification(errorMessage, "error");
+          loading.value = false;
+          currentAction.value = "";
+        }
+      }, 5000); // Additional 5 seconds for SSM Agent
+    }, 10000); // Increased from 3 to 10 seconds
   } catch (error: any) {
     const errorMessage = error.response?.data?.error || error.message || "Erro desconhecido";
     addLog("Erro no início rápido: " + errorMessage, "error");

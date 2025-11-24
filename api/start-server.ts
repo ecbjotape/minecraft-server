@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { SSMClient, SendCommandCommand } from "@aws-sdk/client-ssm";
+import { EC2Client, DescribeInstancesCommand } from "@aws-sdk/client-ec2";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -35,6 +36,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           accessKey: !AWS_ACCESS_KEY_ID,
           secretKey: !AWS_SECRET_ACCESS_KEY,
         },
+      });
+    }
+
+    // First, check EC2 instance state
+    const ec2Client = new EC2Client({
+      region: AWS_REGION,
+      credentials: {
+        accessKeyId: AWS_ACCESS_KEY_ID,
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
+      },
+    });
+
+    const ec2Command = new DescribeInstancesCommand({
+      InstanceIds: [INSTANCE_ID],
+    });
+
+    const ec2Response = await ec2Client.send(ec2Command);
+    const instance = ec2Response.Reservations?.[0]?.Instances?.[0];
+
+    if (!instance) {
+      return res.status(404).json({
+        error: "Instância EC2 não encontrada",
+      });
+    }
+
+    const state = instance.State?.Name;
+
+    // Check if instance is in a valid state for SSM
+    if (state !== "running") {
+      return res.status(409).json({
+        error: `A instância precisa estar rodando. Estado atual: ${state}. Aguarde a EC2 iniciar completamente.`,
+        currentState: state,
       });
     }
 
@@ -74,11 +107,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error("Error starting server:", error);
     const err = error as any;
-    return res.status(500).json({
-      error: "Failed to start Minecraft server",
+
+    // Handle specific SSM errors
+    let userMessage = "Falha ao iniciar servidor Minecraft";
+    let statusCode = 500;
+
+    if (err.__type === "InvalidInstanceId" || err.code === "InvalidInstanceId") {
+      userMessage = "A instância EC2 ainda não está pronta para receber comandos. Aguarde mais alguns segundos e tente novamente.";
+      statusCode = 503; // Service Unavailable
+    }
+
+    return res.status(statusCode).json({
+      error: userMessage,
       details: err.message || String(error),
-      errorName: err.name,
-      errorCode: err.code,
+      errorName: err.name || err.__type,
+      errorCode: err.code || err.__type,
     });
   }
 }
