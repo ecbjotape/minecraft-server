@@ -55,11 +55,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const state = instance.State?.Name || "unknown";
     const publicIp = instance.PublicIpAddress || null;
 
-  let minecraftStatus = "offline";
-  let playersOnline = "0";
-  let maxPlayers = "20";
-  let playerNames: string[] = [];
-  let serverVersion = "Unknown";    // Se a instância está rodando, verifica o status do Minecraft
+    let minecraftStatus = "offline";
+    let playersOnline = "0";
+    let maxPlayers = "20";
+    let playerNames: string[] = [];
+    let serverVersion = "Unknown"; // Se a instância está rodando, verifica o status do Minecraft
     if (state === "running") {
       try {
         const ssmClient = new SSMClient({
@@ -136,6 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const output = result.StandardOutputContent || "";
             const errorOutput = result.StandardErrorContent || "";
             console.log("SSM Output:", output);
+            console.log("SSM Output length:", output.length);
             if (errorOutput) console.log("SSM Error:", errorOutput);
 
             if (
@@ -152,12 +153,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               }
 
               // Extrai nomes dos jogadores
-              const namesMatch = output.match(/PLAYERNAMES:(.*)/);
+              const namesMatch = output.match(/PLAYERNAMES:([^\n\r]*)/);
+              console.log("Names match:", namesMatch);
               if (namesMatch && namesMatch[1].trim()) {
                 playerNames = namesMatch[1]
                   .split(",")
-                  .map((name) => name.trim())
-                  .filter((name) => name.length > 0);
+                  .map((name: string) => name.trim())
+                  .filter((name: string) => name.length > 0);
+                console.log("Parsed player names:", playerNames);
               }
 
               // Extrai versão do servidor
