@@ -43,9 +43,10 @@
               minecraftStatusText
             }}</span>
           </div>
-          <div class="detail-item">
+          <div class="detail-item clickable" @click="showPlayersModal">
             <span class="detail-label">Jogadores Online</span>
             <span class="detail-value">{{ playersOnline }}</span>
+            <span class="detail-hint">Clique para ver detalhes</span>
           </div>
         </div>
       </div>
@@ -160,6 +161,69 @@
         {{ notification.message }}
       </div>
     </transition>
+
+    <!-- Players Modal -->
+    <transition name="modal">
+      <div v-if="showModal" class="modal-overlay" @click="closeModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h2>🎮 Informações dos Jogadores</h2>
+            <button @click="closeModal" class="close-button">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-info-grid">
+              <div class="modal-info-item">
+                <span class="modal-info-label">Status do Servidor</span>
+                <span :class="['modal-info-value', minecraftStatus]">
+                  {{ minecraftStatus === 'online' ? '🟢 Online' : '🔴 Offline' }}
+                </span>
+              </div>
+              <div class="modal-info-item">
+                <span class="modal-info-label">Versão do Minecraft</span>
+                <span class="modal-info-value">{{ serverVersion }}</span>
+              </div>
+              <div class="modal-info-item">
+                <span class="modal-info-label">Jogadores Conectados</span>
+                <span class="modal-info-value">{{ playersOnline }}</span>
+              </div>
+              <div class="modal-info-item">
+                <span class="modal-info-label">IP do Servidor</span>
+                <span class="modal-info-value mono">{{ serverIP }}</span>
+              </div>
+            </div>
+
+            <div v-if="playerNames.length > 0" class="players-list">
+              <h3>👥 Jogadores Online:</h3>
+              <div class="player-cards">
+                <div v-for="(player, index) in playerNames" :key="index" class="player-card">
+                  <div class="player-avatar">{{ player.charAt(0).toUpperCase() }}</div>
+                  <div class="player-info">
+                    <div class="player-name">{{ player }}</div>
+                    <div class="player-status">🟢 Online</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="minecraftStatus === 'online'" class="no-players">
+              <p>🎯 Nenhum jogador conectado no momento</p>
+              <p class="no-players-subtitle">Seja o primeiro a entrar!</p>
+            </div>
+
+            <div v-else class="server-offline-message">
+              <p>⚠️ Servidor offline</p>
+              <p class="offline-subtitle">Inicie o servidor para ver os jogadores</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="closeModal" class="modal-button">Fechar</button>
+            <button @click="refreshStatus" class="modal-button primary">
+              🔄 Atualizar
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -188,6 +252,9 @@ const serverIP = ref("Carregando...");
 const logs = ref<Log[]>([]);
 const notification = ref<Notification | null>(null);
 const isDarkTheme = ref(true);
+const showModal = ref(false);
+const playerNames = ref<string[]>([]);
+const serverVersion = ref("Unknown");
 
 // Computed
 const serverStatus = computed(() => {
@@ -389,6 +456,16 @@ const loadStatus = async () => {
       playersOnline.value = data.playerCount;
     }
 
+    // Atualizar nomes dos jogadores
+    if (data.playerNames) {
+      playerNames.value = data.playerNames;
+    }
+
+    // Atualizar versão do servidor
+    if (data.serverVersion) {
+      serverVersion.value = data.serverVersion;
+    }
+
     addLog(
       `Status - EC2: ${data.ec2State}, Minecraft: ${data.minecraftStatus}`,
       "info"
@@ -403,6 +480,20 @@ const loadStatus = async () => {
   } catch (error) {
     addLog("Erro ao carregar status: " + (error as Error).message, "error");
   }
+};
+
+const showPlayersModal = () => {
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  showModal.value = false;
+};
+
+const refreshStatus = async () => {
+  addLog("Atualizando status...", "info");
+  await loadStatus();
+  showNotification("Status atualizado!", "info");
 };
 
 // Lifecycle
@@ -828,6 +919,263 @@ onMounted(async () => {
   color: white;
 }
 
+.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+  border: 1px solid var(--accent-blue);
+}
+
+.detail-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.modal-info-item {
+  background: var(--bg-secondary);
+  padding: 1rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-info-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.modal-info-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-info-value.mono {
+  font-family: "Courier New", monospace;
+  color: var(--accent-blue);
+}
+
+.modal-info-value.online {
+  color: var(--accent-green);
+}
+
+.players-list {
+  margin-top: 1.5rem;
+}
+
+.players-list h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.player-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.player-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.player-card:hover {
+  transform: translateX(4px);
+  border-color: var(--accent-green);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+}
+
+.player-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.player-info {
+  flex: 1;
+}
+
+.player-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.player-status {
+  font-size: 0.875rem;
+  color: var(--accent-green);
+}
+
+.no-players,
+.server-offline-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.no-players p:first-child,
+.server-offline-message p:first-child {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.no-players-subtitle,
+.offline-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.modal-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modal-button.primary {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: white;
+}
+
+.modal-button.primary:hover {
+  background: #5b9ee6;
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+}
+
+/* Modal Animations */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .modal-content,
+.modal-leave-active .modal-content {
+  transition: transform 0.3s ease;
+}
+
+.modal-enter-from .modal-content,
+.modal-leave-to .modal-content {
+  transform: scale(0.9);
+}
+
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -845,6 +1193,22 @@ onMounted(async () => {
   .notification {
     left: 1rem;
     right: 1rem;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+
+  .modal-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-button {
+    width: 100%;
   }
 }
 </style>

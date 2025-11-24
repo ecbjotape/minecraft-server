@@ -55,11 +55,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const state = instance.State?.Name || "unknown";
     const publicIp = instance.PublicIpAddress || null;
 
-    let minecraftStatus = "offline";
-    let playersOnline = "0";
-    let maxPlayers = "20";
-
-    // Se a instância está rodando, verifica o status do Minecraft
+  let minecraftStatus = "offline";
+  let playersOnline = "0";
+  let maxPlayers = "20";
+  let playerNames: string[] = [];
+  let serverVersion = "Unknown";    // Se a instância está rodando, verifica o status do Minecraft
     if (state === "running") {
       try {
         const ssmClient = new SSMClient({
@@ -80,6 +80,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               "pgrep -f 'minecraft_server.jar' > /dev/null && echo 'PROCESS:RUNNING'",
               "screen -S minecraft -X stuff 'list\\n' 2>/dev/null; sleep 1",
               "tail -n 20 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null | grep -oE 'There are [0-9]+ of a max of [0-9]+' | tail -1 | sed -E 's/There are ([0-9]+) of a max of ([0-9]+)/PLAYERS:\\1\\/\\2/' || echo 'PLAYERS:0/20'",
+              "tail -n 20 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null | grep -oP 'There are [0-9]+ of a max of [0-9]+ players online: \\K.*' | tail -1 | sed 's/^/PLAYERNAMES:/' || echo 'PLAYERNAMES:'",
+              "grep -m 1 'Starting minecraft server version' /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null | sed -E 's/.*version ([0-9.]+).*/VERSION:\\1/' || echo 'VERSION:Unknown'",
             ],
           },
         });
@@ -148,6 +150,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 playersOnline = playersMatch[1];
                 maxPlayers = playersMatch[2];
               }
+
+              // Extrai nomes dos jogadores
+              const namesMatch = output.match(/PLAYERNAMES:(.*)/);
+              if (namesMatch && namesMatch[1].trim()) {
+                playerNames = namesMatch[1]
+                  .split(",")
+                  .map((name) => name.trim())
+                  .filter((name) => name.length > 0);
+              }
+
+              // Extrai versão do servidor
+              const versionMatch = output.match(/VERSION:(.*)/);
+              if (versionMatch && versionMatch[1].trim()) {
+                serverVersion = versionMatch[1].trim();
+              }
             }
           } else {
             console.log("SSM command did not complete in time");
@@ -172,6 +189,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       playersOnline: playersOnline,
       maxPlayers: maxPlayers,
       playerCount: `${playersOnline}/${maxPlayers}`,
+      playerNames: playerNames,
+      serverVersion: serverVersion,
     });
   } catch (error) {
     console.error("Error getting instance status:", error);
