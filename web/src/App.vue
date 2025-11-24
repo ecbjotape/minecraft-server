@@ -4,7 +4,7 @@
       <div class="header-content">
         <div class="logo">
           <div class="minecraft-icon">⛏️</div>
-          <h1>Minecraft Dashboard</h1>
+          <h1>Servidor Minecraft</h1>
         </div>
         <div class="header-actions">
           <button
@@ -175,7 +175,9 @@
               <div class="modal-info-item">
                 <span class="modal-info-label">Status do Servidor</span>
                 <span :class="['modal-info-value', minecraftStatus]">
-                  {{ minecraftStatus === 'online' ? '🟢 Online' : '🔴 Offline' }}
+                  {{
+                    minecraftStatus === "online" ? "🟢 Online" : "🔴 Offline"
+                  }}
                 </span>
               </div>
               <div class="modal-info-item">
@@ -195,8 +197,14 @@
             <div v-if="playerNames.length > 0" class="players-list">
               <h3>👥 Jogadores Online:</h3>
               <div class="player-cards">
-                <div v-for="(player, index) in playerNames" :key="index" class="player-card">
-                  <div class="player-avatar">{{ player.charAt(0).toUpperCase() }}</div>
+                <div
+                  v-for="(player, index) in playerNames"
+                  :key="index"
+                  class="player-card"
+                >
+                  <div class="player-avatar">
+                    {{ player.charAt(0).toUpperCase() }}
+                  </div>
                   <div class="player-info">
                     <div class="player-name">{{ player }}</div>
                     <div class="player-status">🟢 Online</div>
@@ -212,7 +220,9 @@
 
             <div v-else class="server-offline-message">
               <p>⚠️ Servidor offline</p>
-              <p class="offline-subtitle">Inicie o servidor para ver os jogadores</p>
+              <p class="offline-subtitle">
+                Inicie o servidor para ver os jogadores
+              </p>
             </div>
           </div>
           <div class="modal-footer">

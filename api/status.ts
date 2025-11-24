@@ -1,10 +1,29 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { EC2Client, DescribeInstancesCommand } from "@aws-sdk/client-ec2";
+import { DescribeInstancesCommand } from "@aws-sdk/client-ec2";
+import { SendCommandCommand } from "@aws-sdk/client-ssm";
 import {
-  SSMClient,
-  SendCommandCommand,
-  GetCommandInvocationCommand,
-} from "@aws-sdk/client-ssm";
+  validateAWSConfig,
+  createEC2Client,
+  createSSMClient,
+} from "./utils/aws-client";
+import {
+  parseSSMOutput,
+  convertToServerInfo,
+  createDefaultServerInfo,
+} from "./utils/minecraft-parser";
+import {
+  waitForSSMCommand,
+  extractCommandOutput,
+} from "./utils/ssm-helper";
+
+// Edge cases documented:
+// 1. Missing environment variables
+// 2. EC2 instance not found
+// 3. EC2 instance in transitional state (pending, stopping)
+// 4. SSM command timeout
+// 5. Minecraft server crashed but EC2 running
+// 6. Player count/names mismatch
+// 7. Network errors during AWS API calls
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
@@ -12,31 +31,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const {
-      INSTANCE_ID,
-      AWS_REGION,
-      AWS_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY,
-    } = process.env;
+    const INSTANCE_ID = process.env.INSTANCE_ID;
 
-    if (
-      !INSTANCE_ID ||
-      !AWS_REGION ||
-      !AWS_ACCESS_KEY_ID ||
-      !AWS_SECRET_ACCESS_KEY
-    ) {
+    if (!INSTANCE_ID) {
       return res.status(500).json({
-        error: "AWS credentials not configured",
+        error: "Instance ID not configured",
       });
     }
 
-    const ec2Client = new EC2Client({
-      region: AWS_REGION,
-      credentials: {
-        accessKeyId: AWS_ACCESS_KEY_ID,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY,
-      },
-    });
+    // Validate AWS credentials (throws if missing)
+    const awsConfig = validateAWSConfig();
+    const ec2Client = createEC2Client(awsConfig);
 
     // Get EC2 instance status
     const ec2Command = new DescribeInstancesCommand({
@@ -46,31 +51,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ec2Response = await ec2Client.send(ec2Command);
     const instance = ec2Response.Reservations?.[0]?.Instances?.[0];
 
+    // Edge case: Instance not found in AWS
     if (!instance) {
       return res.status(404).json({
         error: "Instance not found",
+        instanceId: INSTANCE_ID,
       });
     }
 
     const state = instance.State?.Name || "unknown";
     const publicIp = instance.PublicIpAddress || null;
 
-    let minecraftStatus = "offline";
-    let playersOnline = "0";
-    let maxPlayers = "20";
-    let playerNames: string[] = [];
-    let serverVersion = "Unknown"; // Se a instância está rodando, verifica o status do Minecraft
+    // Default to offline state
+    let serverInfo = createDefaultServerInfo();
+
+    // Only check Minecraft if EC2 is running
+    // Edge case: Don't waste resources checking stopped/stopping instances
     if (state === "running") {
       try {
-        const ssmClient = new SSMClient({
-          region: AWS_REGION,
-          credentials: {
-            accessKeyId: AWS_ACCESS_KEY_ID,
-            secretAccessKey: AWS_SECRET_ACCESS_KEY,
-          },
-        });
+        const ssmClient = createSSMClient(awsConfig);
 
-        // Comando simplificado para verificar o Minecraft
+        // SSM commands to check Minecraft server status
         const checkCommand = new SendCommandCommand({
           InstanceIds: [INSTANCE_ID],
           DocumentName: "AWS-RunShellScript",
@@ -89,118 +90,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const ssmResponse = await ssmClient.send(checkCommand);
         const commandId = ssmResponse.Command?.CommandId;
 
-        if (commandId) {
-          // Aguarda mais tempo para garantir que o comando executou (aumentado para 5 segundos)
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-
-          // Tenta buscar o resultado com retry (até 5 tentativas)
-          let attempts = 0;
-          let result = null;
-
-          while (attempts < 5) {
-            try {
-              const resultCommand = new GetCommandInvocationCommand({
-                CommandId: commandId,
-                InstanceId: INSTANCE_ID,
-              });
-
-              result = await ssmClient.send(resultCommand);
-
-              console.log(
-                `Attempt ${attempts + 1} - SSM Status:`,
-                result.Status
-              );
-
-              if (result.Status === "Success" || result.Status === "Failed") {
-                break;
-              }
-
-              // Se ainda está em execução, aguarda mais um pouco
-              if (
-                result.Status === "InProgress" ||
-                result.Status === "Pending"
-              ) {
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                attempts++;
-              } else {
-                break;
-              }
-            } catch (err: any) {
-              console.log(`Attempt ${attempts + 1} failed:`, err.message);
-              attempts++;
-              await new Promise((resolve) => setTimeout(resolve, 1500));
-            }
-          }
+        // Edge case: No command ID returned
+        if (!commandId) {
+          console.log("No command ID received from SSM");
+        } else {
+          // Wait for command to complete with retry logic
+          const result = await waitForSSMCommand(
+            ssmClient,
+            commandId,
+            INSTANCE_ID
+          );
 
           if (result) {
-            const output = result.StandardOutputContent || "";
-            const errorOutput = result.StandardErrorContent || "";
+            const { output, error } = extractCommandOutput(result);
             console.log("SSM Output:", output);
             console.log("SSM Output length:", output.length);
-            if (errorOutput) console.log("SSM Error:", errorOutput);
+            if (error) console.log("SSM Error:", error);
 
-            if (
-              output.includes("STATUS:ONLINE") ||
-              output.includes("PROCESS:RUNNING")
-            ) {
-              minecraftStatus = "online";
+            // Parse the output
+            const parsed = parseSSMOutput(output);
+            console.log("Parsed SSM:", JSON.stringify(parsed, null, 2));
 
-              // Tenta extrair número de jogadores
-              const playersMatch = output.match(/PLAYERS:(\d+)\/(\d+)/);
-              if (playersMatch) {
-                playersOnline = playersMatch[1];
-                maxPlayers = playersMatch[2];
-              }
-
-              // Extrai nomes dos jogadores
-              const namesMatch = output.match(/PLAYERNAMES:([^\n\r]*)/);
-              console.log("Names match:", namesMatch);
-              if (namesMatch && namesMatch[1].trim()) {
-                playerNames = namesMatch[1]
-                  .split(",")
-                  .map((name: string) => name.trim())
-                  .filter((name: string) => name.length > 0);
-                console.log("Parsed player names:", playerNames);
-              }
-
-              // Extrai versão do servidor
-              const versionMatch = output.match(/VERSION:(.*)/);
-              if (versionMatch && versionMatch[1].trim()) {
-                serverVersion = versionMatch[1].trim();
-              }
-            }
-          } else {
-            console.log("SSM command did not complete in time");
+            // Convert to server info
+            serverInfo = convertToServerInfo(parsed);
           }
         }
       } catch (ssmError) {
-        // Se falhar ao verificar o Minecraft, continua com offline
+        // Edge case: SSM fails (network, permissions, etc.)
+        // Continue with offline status
         console.log("Could not check Minecraft status:", ssmError);
       }
     }
 
+    // Return comprehensive status
     return res.status(200).json({
       success: true,
       instanceId: INSTANCE_ID,
-      ec2State: state, // pending | running | stopping | stopped | shutting-down | terminated
+      ec2State: state,
       publicIp: publicIp,
       isRunning: state === "running",
       isStopped: state === "stopped",
       isPending: state === "pending",
       isStopping: state === "stopping",
-      minecraftStatus: minecraftStatus, // online | offline | starting
-      playersOnline: playersOnline,
-      maxPlayers: maxPlayers,
-      playerCount: `${playersOnline}/${maxPlayers}`,
-      playerNames: playerNames,
-      serverVersion: serverVersion,
+      minecraftStatus: serverInfo.status,
+      playersOnline: String(serverInfo.playersOnline),
+      maxPlayers: String(serverInfo.maxPlayers),
+      playerCount: `${serverInfo.playersOnline}/${serverInfo.maxPlayers}`,
+      playerNames: serverInfo.playerNames,
+      serverVersion: serverInfo.serverVersion,
     });
   } catch (error) {
     console.error("Error getting instance status:", error);
     const err = error as any;
+    
+    // Edge case: Return detailed error for debugging
     return res.status(500).json({
       error: "Failed to get instance status",
       details: err.message || String(error),
+      errorName: err.name,
+      errorCode: err.code,
     });
   }
 }
