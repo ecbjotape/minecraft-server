@@ -24,13 +24,29 @@
       <div class="status-card">
         <div class="status-header">
           <h2>Status do Servidor</h2>
-          <div :class="['status-indicator', serverStatus]">
+          <div v-if="initialLoading" class="skeleton skeleton-badge"></div>
+          <div v-else :class="['status-indicator', serverStatus]">
             <span class="status-dot"></span>
             {{ statusText }}
           </div>
         </div>
 
-        <div class="status-details">
+        <div v-if="initialLoading" class="status-details">
+          <div class="detail-item">
+            <span class="detail-label">Instância EC2</span>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Servidor Minecraft</span>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Jogadores Online</span>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        </div>
+
+        <div v-else class="status-details">
           <div class="detail-item">
             <span class="detail-label">Instância EC2</span>
             <span :class="['detail-value', ec2Status]">{{
@@ -253,6 +269,7 @@ interface Notification {
 }
 
 // State
+const initialLoading = ref(true);
 const loading = ref(false);
 const currentAction = ref("");
 const ec2Status = ref<"stopped" | "running" | "pending">("stopped");
@@ -489,6 +506,8 @@ const loadStatus = async () => {
     }
   } catch (error) {
     addLog("Erro ao carregar status: " + (error as Error).message, "error");
+  } finally {
+    initialLoading.value = false;
   }
 };
 
@@ -1163,6 +1182,40 @@ onMounted(async () => {
 .modal-button.primary:hover {
   background: #5b9ee6;
   box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--border-color) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-text {
+  height: 1.5rem;
+  width: 100%;
+  max-width: 120px;
+}
+
+.skeleton-badge {
+  height: 2.5rem;
+  width: 140px;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Modal Animations */
