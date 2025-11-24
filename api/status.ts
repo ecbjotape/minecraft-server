@@ -5,13 +5,13 @@ import {
   validateAWSConfig,
   createEC2Client,
   createSSMClient,
-} from "./utils/aws-client";
+} from "./utils/aws-client.js";
 import {
   parseSSMOutput,
   convertToServerInfo,
   createDefaultServerInfo,
-} from "./utils/minecraft-parser";
-import { waitForSSMCommand, extractCommandOutput } from "./utils/ssm-helper";
+} from "./utils/minecraft-parser.js";
+import { waitForSSMCommand, extractCommandOutput } from "./utils/ssm-helper.js";
 
 // Edge cases documented:
 // 1. Missing environment variables
