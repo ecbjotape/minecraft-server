@@ -440,7 +440,7 @@ const startEC2 = async () => {
   addLog("Iniciando instância EC2...", "info");
 
   try {
-    const response = await axios.post("/api/start-ec2");
+    const response = await axios.post("/api/server", { action: "start-ec2" });
     ec2Status.value = "pending";
 
     setTimeout(() => {
@@ -466,7 +466,7 @@ const startServer = async () => {
 
   try {
     minecraftStatus.value = "starting";
-    const response = await axios.post("/api/start-server");
+    const response = await axios.post("/api/server", { action: "start-server" });
 
     setTimeout(() => {
       minecraftStatus.value = "online";
@@ -493,7 +493,7 @@ const quickStart = async () => {
   try {
     // Start EC2
     ec2Status.value = "pending";
-    await axios.post("/api/start-ec2");
+    await axios.post("/api/server", { action: "start-ec2" });
 
     // Wait longer for EC2 to be fully ready (increased from 3s to 10s)
     addLog("Aguardando EC2 ficar pronta (10 segundos)...", "info");
@@ -506,7 +506,7 @@ const quickStart = async () => {
         try {
           addLog("Iniciando Minecraft...", "info");
           minecraftStatus.value = "starting";
-          await axios.post("/api/start-server");
+          await axios.post("/api/server", { action: "start-server" });
 
           setTimeout(() => {
             minecraftStatus.value = "online";
@@ -545,7 +545,7 @@ const stopEC2 = async () => {
   addLog("Parando instância EC2...", "warning");
 
   try {
-    await axios.post("/api/stop-ec2");
+    await axios.post("/api/server", { action: "stop-ec2" });
 
     setTimeout(() => {
       ec2Status.value = "stopped";
@@ -566,7 +566,7 @@ const stopEC2 = async () => {
 
 const loadStatus = async () => {
   try {
-    const response = await axios.get("/api/status");
+    const response = await axios.get("/api/server?action=status");
     const data = response.data;
 
     // Atualizar status do EC2
@@ -643,7 +643,7 @@ const checkAuth = async () => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await axios.get("/api/auth-check");
+    const response = await axios.get("/api/auth?action=check");
     authEnabled.value = response.data.authEnabled;
     isAuthenticated.value = response.data.authenticated;
 
@@ -683,7 +683,7 @@ const onAuthenticated = async () => {
 
 const logout = async () => {
   try {
-    await axios.post("/api/logout");
+    await axios.post("/api/auth", { action: "logout" });
     localStorage.removeItem("auth_token");
     localStorage.removeItem("username");
     delete axios.defaults.headers.common["Authorization"];

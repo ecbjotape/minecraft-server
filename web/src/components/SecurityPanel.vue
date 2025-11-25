@@ -152,8 +152,8 @@ function showStatus(
 async function toggleWhitelist() {
   loading.value = true;
   try {
-    const action = whitelistEnabled.value ? "disable" : "enable";
-    const response = await axios.post("/api/whitelist", { action });
+    const action = whitelistEnabled.value ? "whitelist-disable" : "whitelist-enable";
+    const response = await axios.post("/api/security", { action });
 
     if (response.data.success) {
       whitelistEnabled.value = !whitelistEnabled.value;
@@ -179,8 +179,8 @@ async function addPlayer() {
 
   loading.value = true;
   try {
-    const response = await axios.post("/api/whitelist", {
-      action: "add",
+    const response = await axios.post("/api/security", {
+      action: "whitelist-add",
       player: newPlayer.value.trim(),
     });
 
@@ -205,8 +205,8 @@ async function addPlayer() {
 async function removePlayer(player: string) {
   loading.value = true;
   try {
-    const response = await axios.post("/api/whitelist", {
-      action: "remove",
+    const response = await axios.post("/api/security", {
+      action: "whitelist-remove",
       player,
     });
 
@@ -227,7 +227,7 @@ async function removePlayer(player: string) {
 async function loadWhitelist() {
   loading.value = true;
   try {
-    const response = await axios.post("/api/whitelist", { action: "list" });
+    const response = await axios.post("/api/security", { action: "whitelist-list" });
 
     if (response.data.success) {
       // Parse the whitelist output
@@ -266,7 +266,7 @@ async function loadWhitelist() {
 async function createBackup() {
   loading.value = true;
   try {
-    const response = await axios.post("/api/backup");
+    const response = await axios.post("/api/security", { action: "backup" });
 
     if (response.data.success) {
       showStatus("Backup criado com sucesso!", "success");
@@ -281,7 +281,7 @@ async function createBackup() {
 async function loadLogs() {
   loading.value = true;
   try {
-    const response = await axios.get(`/api/logs?lines=${logLines.value}`);
+    const response = await axios.get(`/api/security?action=logs&lines=${logLines.value}`);
 
     if (response.data.success) {
       logs.value = response.data.logs.filter(
