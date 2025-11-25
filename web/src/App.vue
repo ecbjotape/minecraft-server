@@ -58,6 +58,12 @@
         >
           🔒 Segurança
         </button>
+        <button
+          @click="activeTab = 'config'"
+          :class="['tab-button', { active: activeTab === 'config' }]"
+        >
+          ⚙️ Configurações
+        </button>
       </div>
 
       <!-- Dashboard Tab -->
@@ -219,6 +225,11 @@
       <div v-show="activeTab === 'security'" class="tab-content">
         <SecurityPanel />
       </div>
+
+      <!-- Config Tab -->
+      <div v-show="activeTab === 'config'" class="tab-content">
+        <ServerConfig />
+      </div>
     </main>
 
     <!-- Notification -->
@@ -318,6 +329,7 @@ import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import Login from "./components/Login.vue";
 import SecurityPanel from "./components/SecurityPanel.vue";
+import ServerConfig from "./components/ServerConfig.vue";
 
 interface Log {
   time: string;
@@ -348,7 +360,7 @@ const copied = ref(false);
 const isAuthenticated = ref(false);
 const authEnabled = ref(false);
 const username = ref("");
-const activeTab = ref<"dashboard" | "security">("dashboard");
+const activeTab = ref<"dashboard" | "security" | "config">("dashboard");
 
 // Computed
 const serverStatus = computed(() => {

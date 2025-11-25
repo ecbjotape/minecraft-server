@@ -235,7 +235,7 @@ async function loadWhitelist() {
 
     if (response.data.success) {
       const output = response.data.output || "";
-      
+
       // Parse whitelist status
       if (output.includes("WHITELIST_STATUS:enabled")) {
         whitelistEnabled.value = true;
@@ -249,7 +249,9 @@ async function loadWhitelist() {
         try {
           const whitelistData = JSON.parse(fileMatch[1]);
           if (Array.isArray(whitelistData)) {
-            players.value = whitelistData.map((entry: any) => entry.name || entry).filter(Boolean);
+            players.value = whitelistData
+              .map((entry: any) => entry.name || entry)
+              .filter(Boolean);
           }
         } catch (e) {
           console.log("Failed to parse whitelist.json:", e);
