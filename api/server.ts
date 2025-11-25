@@ -17,10 +17,7 @@ import {
   convertToServerInfo,
   createDefaultServerInfo,
 } from "./utils/minecraft-parser.js";
-import {
-  waitForSSMCommand,
-  extractCommandOutput,
-} from "./utils/ssm-helper.js";
+import { waitForSSMCommand, extractCommandOutput } from "./utils/ssm-helper.js";
 
 async function serverHandler(req: VercelRequest, res: VercelResponse) {
   const { action } = req.method === "GET" ? req.query : req.body;

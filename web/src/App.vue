@@ -466,7 +466,9 @@ const startServer = async () => {
 
   try {
     minecraftStatus.value = "starting";
-    const response = await axios.post("/api/server", { action: "start-server" });
+    const response = await axios.post("/api/server", {
+      action: "start-server",
+    });
 
     setTimeout(() => {
       minecraftStatus.value = "online";

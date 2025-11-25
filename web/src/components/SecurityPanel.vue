@@ -152,7 +152,9 @@ function showStatus(
 async function toggleWhitelist() {
   loading.value = true;
   try {
-    const action = whitelistEnabled.value ? "whitelist-disable" : "whitelist-enable";
+    const action = whitelistEnabled.value
+      ? "whitelist-disable"
+      : "whitelist-enable";
     const response = await axios.post("/api/security", { action });
 
     if (response.data.success) {
@@ -227,31 +229,35 @@ async function removePlayer(player: string) {
 async function loadWhitelist() {
   loading.value = true;
   try {
-    const response = await axios.post("/api/security", { action: "whitelist-list" });
+    const response = await axios.post("/api/security", {
+      action: "whitelist-list",
+    });
 
     if (response.data.success) {
-      // Parse the whitelist output
       const output = response.data.output || "";
-      if (
-        output.includes("enabled") ||
-        output.includes("Whitelist is turned on")
-      ) {
+      
+      // Parse whitelist status
+      if (output.includes("WHITELIST_STATUS:enabled")) {
         whitelistEnabled.value = true;
-      } else if (
-        output.includes("disabled") ||
-        output.includes("Whitelist is turned off")
-      ) {
+      } else if (output.includes("WHITELIST_STATUS:disabled")) {
         whitelistEnabled.value = false;
       }
 
-      // Extract player names from output
-      const lines = output.split("\n");
-      const playerList = lines
-        .filter((line: string) => line.match(/^\s*-\s+\w+/))
-        .map((line: string) => line.replace(/^\s*-\s+/, "").trim())
-        .filter((name: string) => name.length > 0);
-
-      players.value = playerList;
+      // Parse whitelist.json content
+      const fileMatch = output.match(/WHITELIST_FILE:(.+)/);
+      if (fileMatch) {
+        try {
+          const whitelistData = JSON.parse(fileMatch[1]);
+          if (Array.isArray(whitelistData)) {
+            players.value = whitelistData.map((entry: any) => entry.name || entry).filter(Boolean);
+          }
+        } catch (e) {
+          console.log("Failed to parse whitelist.json:", e);
+          players.value = [];
+        }
+      } else {
+        players.value = [];
+      }
     }
   } catch (error: any) {
     showStatus(
@@ -281,7 +287,9 @@ async function createBackup() {
 async function loadLogs() {
   loading.value = true;
   try {
-    const response = await axios.get(`/api/security?action=logs&lines=${logLines.value}`);
+    const response = await axios.get(
+      `/api/security?action=logs&lines=${logLines.value}`
+    );
 
     if (response.data.success) {
       logs.value = response.data.logs.filter(

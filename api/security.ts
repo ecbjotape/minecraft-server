@@ -1,10 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { SSMClient, SendCommandCommand } from "@aws-sdk/client-ssm";
 import { requireAuth } from "./utils/auth.js";
-import {
-  waitForSSMCommand,
-  extractCommandOutput,
-} from "./utils/ssm-helper.js";
+import { waitForSSMCommand, extractCommandOutput } from "./utils/ssm-helper.js";
 
 async function securityHandler(req: VercelRequest, res: VercelResponse) {
   const { action } = req.method === "GET" ? req.query : req.body;
@@ -79,7 +76,11 @@ async function securityHandler(req: VercelRequest, res: VercelResponse) {
           return res.status(500).json({ error: "Failed to get command ID" });
         }
 
-        const result = await waitForSSMCommand(ssmClient, commandId, INSTANCE_ID);
+        const result = await waitForSSMCommand(
+          ssmClient,
+          commandId,
+          INSTANCE_ID
+        );
         const output = result
           ? await extractCommandOutput(ssmClient, commandId, INSTANCE_ID)
           : "";
@@ -121,7 +122,11 @@ async function securityHandler(req: VercelRequest, res: VercelResponse) {
           return res.status(500).json({ error: "Failed to get command ID" });
         }
 
-        const result = await waitForSSMCommand(ssmClient, commandId, INSTANCE_ID);
+        const result = await waitForSSMCommand(
+          ssmClient,
+          commandId,
+          INSTANCE_ID
+        );
         const output = result
           ? await extractCommandOutput(ssmClient, commandId, INSTANCE_ID)
           : "";
@@ -144,7 +149,17 @@ async function securityHandler(req: VercelRequest, res: VercelResponse) {
           DocumentName: "AWS-RunShellScript",
           Parameters: {
             commands: [
-              `screen -S minecraft -p 0 -X stuff "whitelist list^M" && sleep 2 && tail -n 5 /home/ubuntu/minecraft-server/logs/latest.log`,
+              `cd /home/ubuntu/minecraft-server && \
+              if [ -f whitelist.json ]; then \
+                echo "WHITELIST_FILE:$(cat whitelist.json)"; \
+              else \
+                echo "WHITELIST_FILE:[]"; \
+              fi && \
+              if grep -q "white-list=true" server.properties 2>/dev/null; then \
+                echo "WHITELIST_STATUS:enabled"; \
+              else \
+                echo "WHITELIST_STATUS:disabled"; \
+              fi`,
             ],
           },
         });
@@ -156,7 +171,11 @@ async function securityHandler(req: VercelRequest, res: VercelResponse) {
           return res.status(500).json({ error: "Failed to get command ID" });
         }
 
-        const result = await waitForSSMCommand(ssmClient, commandId, INSTANCE_ID);
+        const result = await waitForSSMCommand(
+          ssmClient,
+          commandId,
+          INSTANCE_ID
+        );
         const output = result
           ? await extractCommandOutput(ssmClient, commandId, INSTANCE_ID)
           : "";
@@ -189,7 +208,11 @@ async function securityHandler(req: VercelRequest, res: VercelResponse) {
           return res.status(500).json({ error: "Failed to get command ID" });
         }
 
-        const result = await waitForSSMCommand(ssmClient, commandId, INSTANCE_ID);
+        const result = await waitForSSMCommand(
+          ssmClient,
+          commandId,
+          INSTANCE_ID
+        );
         const output = result
           ? await extractCommandOutput(ssmClient, commandId, INSTANCE_ID)
           : "";
@@ -222,7 +245,11 @@ async function securityHandler(req: VercelRequest, res: VercelResponse) {
           return res.status(500).json({ error: "Failed to get command ID" });
         }
 
-        const result = await waitForSSMCommand(ssmClient, commandId, INSTANCE_ID);
+        const result = await waitForSSMCommand(
+          ssmClient,
+          commandId,
+          INSTANCE_ID
+        );
         const output = result
           ? await extractCommandOutput(ssmClient, commandId, INSTANCE_ID)
           : "";
