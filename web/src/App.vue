@@ -1,5 +1,8 @@
 <template>
-  <div class="app-container">
+  <!-- Login Screen -->
+  <Login v-if="authEnabled && !isAuthenticated" @authenticated="onAuthenticated" />
+
+  <div v-else class="app-container">
     <header class="header">
       <div class="header-content">
         <div class="logo">
@@ -22,9 +25,17 @@
               :title="'Copiar IP'"
               :disabled="serverIP === 'Carregando...'"
             >
-              <span class="copy-icon">{{ copied ? '✓' : '📋' }}</span>
+              <span class="copy-icon">{{ copied ? "✓" : "📋" }}</span>
             </button>
           </div>
+          <button
+            v-if="authEnabled && isAuthenticated"
+            @click="logout"
+            class="logout-button"
+            :title="'Logout'"
+          >
+            <span class="logout-icon">🚪</span>
+          </button>
         </div>
       </div>
     </header>
@@ -224,7 +235,7 @@
                     :title="'Copiar IP'"
                     :disabled="serverIP === 'Carregando...'"
                   >
-                    {{ copied ? '✓' : '📋' }}
+                    {{ copied ? "✓" : "📋" }}
                   </button>
                 </div>
               </div>
@@ -276,6 +287,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
+import Login from "./components/Login.vue";
 
 interface Log {
   time: string;
@@ -303,6 +315,9 @@ const showModal = ref(false);
 const playerNames = ref<string[]>([]);
 const serverVersion = ref("Unknown");
 const copied = ref(false);
+const isAuthenticated = ref(false);
+const authEnabled = ref(false);
+const username = ref("");
 
 // Computed
 const serverStatus = computed(() => {
@@ -372,13 +387,13 @@ const toggleTheme = () => {
 
 const copyIP = async () => {
   if (serverIP.value === "Carregando...") return;
-  
+
   try {
     await navigator.clipboard.writeText(serverIP.value);
     copied.value = true;
     showNotification("IP copiado para a área de transferência!", "success");
     addLog(`IP ${serverIP.value} copiado`, "info");
-    
+
     setTimeout(() => {
       copied.value = false;
     }, 2000);
@@ -589,7 +604,83 @@ const refreshStatus = async () => {
 };
 
 // Lifecycle
+// Authentication methods
+const checkAuth = async () => {
+  try {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await axios.get("/api/auth-check");
+    authEnabled.value = response.data.authEnabled;
+    isAuthenticated.value = response.data.authenticated;
+
+    if (response.data.authEnabled && !response.data.authenticated) {
+      // Clear invalid token
+      localStorage.removeItem("auth_token");
+      delete axios.defaults.headers.common["Authorization"];
+    }
+
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      username.value = storedUsername;
+    }
+  } catch (error) {
+    console.error("Auth check failed:", error);
+    authEnabled.value = false;
+    isAuthenticated.value = true; // Allow access if auth check fails
+  }
+};
+
+const onAuthenticated = async () => {
+  const token = localStorage.getItem("auth_token");
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }
+  
+  const storedUsername = localStorage.getItem("username");
+  if (storedUsername) {
+    username.value = storedUsername;
+  }
+
+  isAuthenticated.value = true;
+  addLog(`Login realizado: ${username.value}`, "success");
+  await loadStatus();
+};
+
+const logout = async () => {
+  try {
+    await axios.post("/api/logout");
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("username");
+    delete axios.defaults.headers.common["Authorization"];
+    isAuthenticated.value = false;
+    addLog("Logout realizado", "info");
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
+};
+
+// Intercept 401 responses
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && authEnabled.value) {
+      isAuthenticated.value = false;
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("username");
+      delete axios.defaults.headers.common["Authorization"];
+      showNotification("Sessão expirada. Faça login novamente.", "error");
+    }
+    return Promise.reject(error);
+  }
+);
+
 onMounted(async () => {
+  // Check authentication first
+  await checkAuth();
+
   // Carregar tema salvo
   const savedTheme = localStorage.getItem("theme") || "dark";
   isDarkTheme.value = savedTheme === "dark";
@@ -597,20 +688,23 @@ onMounted(async () => {
 
   addLog("Dashboard carregado", "success");
 
-  // Busca configurações do servidor
-  try {
-    const response = await axios.get("/api/config");
-    serverIP.value = response.data.serverIP || "N/A";
-  } catch (error) {
-    serverIP.value = "N/A";
-    addLog("Não foi possível carregar IP do servidor", "warning");
+  // Only load data if authenticated (or auth disabled)
+  if (isAuthenticated.value) {
+    // Busca configurações do servidor
+    try {
+      const response = await axios.get("/api/config");
+      serverIP.value = response.data.serverIP || "N/A";
+    } catch (error) {
+      serverIP.value = "N/A";
+      addLog("Não foi possível carregar IP do servidor", "warning");
+    }
+
+    // Carrega status atual
+    await loadStatus();
+
+    // Atualiza status a cada 30 segundos
+    setInterval(loadStatus, 30000);
   }
-
-  // Carrega status atual
-  await loadStatus();
-
-  // Atualiza status a cada 30 segundos
-  setInterval(loadStatus, 30000);
 });
 </script>
 
@@ -738,6 +832,34 @@ onMounted(async () => {
 }
 
 .copy-icon {
+  font-size: 1.2rem;
+}
+
+.logout-button {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--accent-red);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: scale(1.05);
+}
+
+.logout-button:active {
+  transform: scale(0.95);
+}
+
+.logout-icon {
   font-size: 1.2rem;
 }
 

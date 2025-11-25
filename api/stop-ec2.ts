@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { EC2Client, StopInstancesCommand } from "@aws-sdk/client-ec2";
+import { requireAuth } from "./utils/auth.js";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function stopEC2Handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -69,3 +70,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 }
+
+export default requireAuth(stopEC2Handler);

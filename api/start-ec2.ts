@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { EC2Client, StartInstancesCommand } from "@aws-sdk/client-ec2";
+import { requireAuth } from "./utils/auth.js";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function startEC2Handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -66,7 +67,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let statusCode = 500;
 
     if (err.Code === "IncorrectInstanceState") {
-      userMessage = "A instância já está ligada ou está em transição. Aguarde alguns segundos e tente novamente.";
+      userMessage =
+        "A instância já está ligada ou está em transição. Aguarde alguns segundos e tente novamente.";
       statusCode = 409; // Conflict
     }
 
@@ -78,3 +80,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 }
+
+export default requireAuth(startEC2Handler);
