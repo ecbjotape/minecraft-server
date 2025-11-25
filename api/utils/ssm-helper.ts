@@ -92,21 +92,59 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Extract command output safely
- * Edge cases:
- * - Missing StandardOutputContent
- * - Empty output
- * - Only error output
+ * Extract command output safely - overloaded function
  */
 export function extractCommandOutput(
   result: GetCommandInvocationCommandOutput
-): { output: string; error: string } {
-  const output = result.StandardOutputContent || "";
-  const error = result.StandardErrorContent || "";
+): { output: string; error: string };
+export function extractCommandOutput(
+  ssmClient: SSMClient,
+  commandId: string,
+  instanceId: string
+): Promise<string>;
+export function extractCommandOutput(
+  resultOrClient: GetCommandInvocationCommandOutput | SSMClient,
+  commandId?: string,
+  instanceId?: string
+): { output: string; error: string } | Promise<string> {
+  // If called with GetCommandInvocationCommandOutput
+  if ("StandardOutputContent" in resultOrClient) {
+    const output = resultOrClient.StandardOutputContent || "";
+    const error = resultOrClient.StandardErrorContent || "";
 
-  if (output.trim().length === 0 && error.trim().length > 0) {
-    console.log("SSM command produced only errors:", error);
+    if (output.trim().length === 0 && error.trim().length > 0) {
+      console.log("SSM command produced only errors:", error);
+    }
+
+    return { output, error };
   }
 
-  return { output, error };
+  // If called with SSMClient, commandId, instanceId
+  return extractCommandOutputAsync(
+    resultOrClient as SSMClient,
+    commandId!,
+    instanceId!
+  );
+}
+
+/**
+ * Async version to extract command output
+ */
+async function extractCommandOutputAsync(
+  ssmClient: SSMClient,
+  commandId: string,
+  instanceId: string
+): Promise<string> {
+  try {
+    const command = new GetCommandInvocationCommand({
+      CommandId: commandId,
+      InstanceId: instanceId,
+    });
+
+    const result = await ssmClient.send(command);
+    return result.StandardOutputContent || "";
+  } catch (error) {
+    console.error("Error extracting command output:", error);
+    throw error;
+  }
 }

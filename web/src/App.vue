@@ -44,154 +44,180 @@
     </header>
 
     <main class="main-content">
-      <!-- Status Card -->
-      <div class="status-card">
-        <div class="status-header">
-          <h2>Status do Servidor</h2>
-          <div v-if="initialLoading" class="skeleton skeleton-badge"></div>
-          <div v-else :class="['status-indicator', serverStatus]">
-            <span class="status-dot"></span>
-            {{ statusText }}
-          </div>
-        </div>
-
-        <div v-if="initialLoading" class="status-details">
-          <div class="detail-item">
-            <span class="detail-label">Instância EC2</span>
-            <div class="skeleton skeleton-text"></div>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Servidor Minecraft</span>
-            <div class="skeleton skeleton-text"></div>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Jogadores Online</span>
-            <div class="skeleton skeleton-text"></div>
-          </div>
-        </div>
-
-        <div v-else class="status-details">
-          <div class="detail-item">
-            <span class="detail-label">Instância EC2</span>
-            <span :class="['detail-value', ec2Status]">{{
-              ec2StatusText
-            }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Servidor Minecraft</span>
-            <span :class="['detail-value', minecraftStatus]">{{
-              minecraftStatusText
-            }}</span>
-          </div>
-          <div class="detail-item clickable" @click="showPlayersModal">
-            <span class="detail-label">Jogadores Online</span>
-            <span class="detail-value">{{ playersOnline }}</span>
-            <span class="detail-hint">Clique para ver detalhes</span>
-          </div>
-        </div>
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button
+          @click="activeTab = 'dashboard'"
+          :class="['tab-button', { active: activeTab === 'dashboard' }]"
+        >
+          🎮 Dashboard
+        </button>
+        <button
+          @click="activeTab = 'security'"
+          :class="['tab-button', { active: activeTab === 'security' }]"
+        >
+          🔒 Segurança
+        </button>
       </div>
 
-      <!-- Control Panel -->
-      <div class="control-panel">
-        <h2>Painel de Controle</h2>
-
-        <div class="button-grid">
-          <!-- Start EC2 Button -->
-          <button
-            @click="startEC2"
-            :disabled="loading || ec2Status === 'running'"
-            class="control-button start-ec2"
-          >
-            <span class="button-icon">🚀</span>
-            <span class="button-text">
-              <span class="button-title">Iniciar EC2</span>
-              <span class="button-subtitle">Liga a instância AWS</span>
-            </span>
-            <span
-              v-if="loading && currentAction === 'start-ec2'"
-              class="spinner"
-            ></span>
-          </button>
-
-          <!-- Start Server Button -->
-          <button
-            @click="startServer"
-            :disabled="
-              loading || ec2Status !== 'running' || minecraftStatus === 'online'
-            "
-            class="control-button start-server"
-          >
-            <span class="button-icon">🎮</span>
-            <span class="button-text">
-              <span class="button-title">Iniciar Servidor</span>
-              <span class="button-subtitle">Inicia o Minecraft</span>
-            </span>
-            <span
-              v-if="loading && currentAction === 'start-server'"
-              class="spinner"
-            ></span>
-          </button>
-
-          <!-- Quick Start Button -->
-          <button
-            @click="quickStart"
-            :disabled="
-              loading ||
-              (ec2Status === 'running' && minecraftStatus === 'online')
-            "
-            class="control-button quick-start"
-          >
-            <span class="button-icon">⚡</span>
-            <span class="button-text">
-              <span class="button-title">Início Rápido</span>
-              <span class="button-subtitle">EC2 + Servidor</span>
-            </span>
-            <span
-              v-if="loading && currentAction === 'quick-start'"
-              class="spinner"
-            ></span>
-          </button>
-
-          <!-- Stop EC2 Button -->
-          <button
-            @click="stopEC2"
-            :disabled="loading || ec2Status === 'stopped'"
-            class="control-button stop-ec2"
-          >
-            <span class="button-icon">🛑</span>
-            <span class="button-text">
-              <span class="button-title">Parar EC2</span>
-              <span class="button-subtitle">Desliga para economizar</span>
-            </span>
-            <span
-              v-if="loading && currentAction === 'stop-ec2'"
-              class="spinner"
-            ></span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Logs Section -->
-      <div class="logs-section">
-        <div class="logs-header">
-          <h2>Logs</h2>
-          <button @click="clearLogs" class="clear-logs-btn">Limpar</button>
-        </div>
-        <div class="logs-container">
-          <div v-if="logs.length === 0" class="no-logs">
-            Nenhum log ainda...
+      <!-- Dashboard Tab -->
+      <div v-show="activeTab === 'dashboard'" class="tab-content">
+        <!-- Status Card -->
+        <div class="status-card">
+          <div class="status-header">
+            <h2>Status do Servidor</h2>
+            <div v-if="initialLoading" class="skeleton skeleton-badge"></div>
+            <div v-else :class="['status-indicator', serverStatus]">
+              <span class="status-dot"></span>
+              {{ statusText }}
+            </div>
           </div>
-          <div v-else class="log-list">
-            <div
-              v-for="(log, index) in logs"
-              :key="index"
-              :class="['log-item', log.type]"
-            >
-              <span class="log-time">{{ log.time }}</span>
-              <span class="log-message">{{ log.message }}</span>
+
+          <div v-if="initialLoading" class="status-details">
+            <div class="detail-item">
+              <span class="detail-label">Instância EC2</span>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Servidor Minecraft</span>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Jogadores Online</span>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+          </div>
+
+          <div v-else class="status-details">
+            <div class="detail-item">
+              <span class="detail-label">Instância EC2</span>
+              <span :class="['detail-value', ec2Status]">{{
+                ec2StatusText
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Servidor Minecraft</span>
+              <span :class="['detail-value', minecraftStatus]">{{
+                minecraftStatusText
+              }}</span>
+            </div>
+            <div class="detail-item clickable" @click="showPlayersModal">
+              <span class="detail-label">Jogadores Online</span>
+              <span class="detail-value">{{ playersOnline }}</span>
+              <span class="detail-hint">Clique para ver detalhes</span>
             </div>
           </div>
         </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+          <h2>Painel de Controle</h2>
+
+          <div class="button-grid">
+            <!-- Start EC2 Button -->
+            <button
+              @click="startEC2"
+              :disabled="loading || ec2Status === 'running'"
+              class="control-button start-ec2"
+            >
+              <span class="button-icon">🚀</span>
+              <span class="button-text">
+                <span class="button-title">Iniciar EC2</span>
+                <span class="button-subtitle">Liga a instância AWS</span>
+              </span>
+              <span
+                v-if="loading && currentAction === 'start-ec2'"
+                class="spinner"
+              ></span>
+            </button>
+
+            <!-- Start Server Button -->
+            <button
+              @click="startServer"
+              :disabled="
+                loading ||
+                ec2Status !== 'running' ||
+                minecraftStatus === 'online'
+              "
+              class="control-button start-server"
+            >
+              <span class="button-icon">🎮</span>
+              <span class="button-text">
+                <span class="button-title">Iniciar Servidor</span>
+                <span class="button-subtitle">Inicia o Minecraft</span>
+              </span>
+              <span
+                v-if="loading && currentAction === 'start-server'"
+                class="spinner"
+              ></span>
+            </button>
+
+            <!-- Quick Start Button -->
+            <button
+              @click="quickStart"
+              :disabled="
+                loading ||
+                (ec2Status === 'running' && minecraftStatus === 'online')
+              "
+              class="control-button quick-start"
+            >
+              <span class="button-icon">⚡</span>
+              <span class="button-text">
+                <span class="button-title">Início Rápido</span>
+                <span class="button-subtitle">EC2 + Servidor</span>
+              </span>
+              <span
+                v-if="loading && currentAction === 'quick-start'"
+                class="spinner"
+              ></span>
+            </button>
+
+            <!-- Stop EC2 Button -->
+            <button
+              @click="stopEC2"
+              :disabled="loading || ec2Status === 'stopped'"
+              class="control-button stop-ec2"
+            >
+              <span class="button-icon">🛑</span>
+              <span class="button-text">
+                <span class="button-title">Parar EC2</span>
+                <span class="button-subtitle">Desliga para economizar</span>
+              </span>
+              <span
+                v-if="loading && currentAction === 'stop-ec2'"
+                class="spinner"
+              ></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Logs Section -->
+        <div class="logs-section">
+          <div class="logs-header">
+            <h2>Logs</h2>
+            <button @click="clearLogs" class="clear-logs-btn">Limpar</button>
+          </div>
+          <div class="logs-container">
+            <div v-if="logs.length === 0" class="no-logs">
+              Nenhum log ainda...
+            </div>
+            <div v-else class="log-list">
+              <div
+                v-for="(log, index) in logs"
+                :key="index"
+                :class="['log-item', log.type]"
+              >
+                <span class="log-time">{{ log.time }}</span>
+                <span class="log-message">{{ log.message }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Tab -->
+      <div v-show="activeTab === 'security'" class="tab-content">
+        <SecurityPanel />
       </div>
     </main>
 
@@ -291,6 +317,7 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import Login from "./components/Login.vue";
+import SecurityPanel from "./components/SecurityPanel.vue";
 
 interface Log {
   time: string;
@@ -321,6 +348,7 @@ const copied = ref(false);
 const isAuthenticated = ref(false);
 const authEnabled = ref(false);
 const username = ref("");
+const activeTab = ref<"dashboard" | "security">("dashboard");
 
 // Computed
 const serverStatus = computed(() => {
@@ -868,6 +896,51 @@ onMounted(async () => {
 }
 
 .main-content {
+  display: grid;
+  gap: 2rem;
+}
+
+.tab-navigation {
+  display: flex;
+  gap: 1rem;
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tab-button:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-blue);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 16px rgba(96, 165, 250, 0.4);
+}
+
+.tab-content {
   display: grid;
   gap: 2rem;
 }

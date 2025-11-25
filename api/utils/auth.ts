@@ -31,7 +31,9 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 
 // Get JWT secret from environment
 function getJWTSecret(): string {
-  return process.env.JWT_SECRET || "minecraft-server-default-secret-change-this";
+  return (
+    process.env.JWT_SECRET || "minecraft-server-default-secret-change-this"
+  );
 }
 
 // Create JWT token (simple implementation)
@@ -53,7 +55,7 @@ export function createToken(username: string): string {
 export function validateToken(token: string): TokenPayload | null {
   try {
     const [payloadBase64, signature] = token.split(".");
-    
+
     // Verify signature
     const expectedSignature = createHmac("sha256", getJWTSecret())
       .update(payloadBase64)

@@ -25,11 +25,13 @@ node scripts/generate-password-hash.js <username> <password>
 ```
 
 **Exemplo:**
+
 ```bash
 node scripts/generate-password-hash.js admin minhasenha123
 ```
 
 **Saída:**
+
 ```
 === Password Hash Generated ===
 
@@ -52,6 +54,7 @@ AUTH_USERS=admin:salt:hash
 ```
 
 **Para múltiplos usuários:**
+
 ```env
 AUTH_USERS=admin:salt1:hash1,user2:salt2:hash2,user3:salt3:hash3
 ```
@@ -127,16 +130,19 @@ Estes endpoints permanecem públicos:
 ### Boas Práticas
 
 ✅ **Use senhas fortes**
+
 - Mínimo de 12 caracteres
 - Combine letras maiúsculas, minúsculas, números e símbolos
 - Não reutilize senhas de outros serviços
 
 ✅ **Proteja suas credenciais**
+
 - Nunca commit o arquivo `.env` com senhas
 - Use variáveis de ambiente no Vercel
 - Não compartilhe os hashes gerados
 
 ✅ **Gerencie usuários**
+
 - Remova usuários inativos das variáveis de ambiente
 - Regenere senhas periodicamente
 - Use usuários separados para cada pessoa
@@ -158,6 +164,7 @@ Para desabilitar completamente:
 3. Faça um novo deploy ou aguarde o próximo
 
 **Ou remova completamente:**
+
 ```bash
 # Remove as variáveis no Vercel
 AUTH_ENABLED
@@ -203,7 +210,7 @@ node scripts/generate-password-hash.js admin minhaSenhaForte123!
 # Name: AUTH_ENABLED
 # Value: true
 
-# Name: AUTH_USERS  
+# Name: AUTH_USERS
 # Value: admin:a1b2c3d4e5f6789...:abc123def456...
 
 # 3. Deploy
@@ -222,6 +229,7 @@ git push
 Autentica um usuário e retorna um token.
 
 **Request:**
+
 ```json
 {
   "username": "admin",
@@ -230,6 +238,7 @@ Autentica um usuário e retorna um token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -240,6 +249,7 @@ Autentica um usuário e retorna um token.
 ```
 
 **Response (401):**
+
 ```json
 {
   "error": "Usuário ou senha inválidos"
@@ -251,6 +261,7 @@ Autentica um usuário e retorna um token.
 Invalida o token atual.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -263,6 +274,7 @@ Invalida o token atual.
 Verifica se o usuário está autenticado.
 
 **Response (200):**
+
 ```json
 {
   "authenticated": true,
@@ -273,6 +285,7 @@ Verifica se o usuário está autenticado.
 ## Suporte
 
 Para problemas ou dúvidas:
+
 1. Verifique este README
 2. Confira os logs do Vercel
 3. Abra uma issue no repositório
