@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { SSMClient, SendCommandCommand } from "@aws-sdk/client-ssm";
-import { requireAuth } from "./utils/auth.js";
+import { requireAuth } from "../utils/auth.js";
 import {
   waitForSSMCommand,
   extractCommandOutput,
-} from "./utils/ssm-helper.js";
+} from "../utils/ssm-helper.js";
 
 async function serverPropertiesHandler(
   req: VercelRequest,
@@ -306,9 +306,7 @@ spawn-protection=${config.spawnProtection || 16}
 enable-command-block=${config.enableCommandBlock || false}
 enable-query=${config.enableQuery || false}
 enable-rcon=${config.enableRcon || false}
-announce-player-achievements=${
-    config.announcePlayerAchievements !== false
-  }
+announce-player-achievements=${config.announcePlayerAchievements !== false}
 enable-status=${config.enableStatus !== false}
 function-permission-level=${config.functionPermissionLevel || 2}
 op-permission-level=${config.opPermissionLevel || 4}

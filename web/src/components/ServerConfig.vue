@@ -16,7 +16,9 @@
               placeholder="Um Servidor Minecraft"
               :disabled="loading"
             />
-            <span class="config-hint">Mensagem exibida na lista de servidores</span>
+            <span class="config-hint"
+              >Mensagem exibida na lista de servidores</span
+            >
           </div>
 
           <div class="config-item">
@@ -34,7 +36,11 @@
 
           <div class="config-item">
             <label for="difficulty">Dificuldade</label>
-            <select id="difficulty" v-model="config.difficulty" :disabled="loading">
+            <select
+              id="difficulty"
+              v-model="config.difficulty"
+              :disabled="loading"
+            >
               <option value="peaceful">Pacífico</option>
               <option value="easy">Fácil</option>
               <option value="normal">Normal</option>
@@ -112,7 +118,11 @@
 
           <div class="config-item">
             <label for="level-type">Tipo de Mundo</label>
-            <select id="level-type" v-model="config.levelType" :disabled="loading">
+            <select
+              id="level-type"
+              v-model="config.levelType"
+              :disabled="loading"
+            >
               <option value="minecraft:normal">Normal</option>
               <option value="minecraft:flat">Plano</option>
               <option value="minecraft:large_biomes">Biomas Grandes</option>
@@ -171,7 +181,11 @@
 
           <div class="config-item checkbox-item">
             <label>
-              <input v-model="config.allowNether" type="checkbox" :disabled="loading" />
+              <input
+                v-model="config.allowNether"
+                type="checkbox"
+                :disabled="loading"
+              />
               <span>Permitir Nether</span>
             </label>
             <span class="config-hint">Habilita portal para o Nether</span>
@@ -335,7 +349,11 @@
 
           <div class="config-item checkbox-item">
             <label>
-              <input v-model="config.enableRcon" type="checkbox" :disabled="loading" />
+              <input
+                v-model="config.enableRcon"
+                type="checkbox"
+                :disabled="loading"
+              />
               <span>Habilitar RCON</span>
             </label>
             <span class="config-hint">Console remoto</span>
@@ -366,7 +384,9 @@
           </div>
 
           <div class="config-item">
-            <label for="function-permission-level">Nível de Permissão de Funções</label>
+            <label for="function-permission-level"
+              >Nível de Permissão de Funções</label
+            >
             <select
               id="function-permission-level"
               v-model.number="config.functionPermissionLevel"
@@ -396,7 +416,9 @@
           </div>
 
           <div class="config-item">
-            <label for="player-idle-timeout">Timeout de Inatividade (min)</label>
+            <label for="player-idle-timeout"
+              >Timeout de Inatividade (min)</label
+            >
             <input
               id="player-idle-timeout"
               v-model.number="config.playerIdleTimeout"
@@ -412,7 +434,11 @@
 
       <!-- Action Buttons -->
       <div class="config-actions">
-        <button @click="loadConfig" :disabled="loading" class="btn btn-secondary">
+        <button
+          @click="loadConfig"
+          :disabled="loading"
+          class="btn btn-secondary"
+        >
           🔄 Recarregar Configurações
         </button>
         <button @click="saveConfig" :disabled="loading" class="btn btn-primary">
@@ -432,12 +458,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { ref, onMounted } from "vue";
+import axios from "axios";
 
 const loading = ref(false);
-const statusMessage = ref('');
-const statusType = ref<'success' | 'error' | 'info'>('info');
+const statusMessage = ref("");
+const statusType = ref<"success" | "error" | "info">("info");
 
 interface ServerConfig {
   // General
@@ -485,15 +511,15 @@ interface ServerConfig {
 }
 
 const config = ref<ServerConfig>({
-  motd: 'Um Servidor Minecraft',
+  motd: "Um Servidor Minecraft",
   maxPlayers: 20,
-  difficulty: 'normal',
-  gamemode: 'survival',
+  difficulty: "normal",
+  gamemode: "survival",
   viewDistance: 10,
   simulationDistance: 10,
-  levelName: 'world',
-  levelSeed: '',
-  levelType: 'minecraft:normal',
+  levelName: "world",
+  levelSeed: "",
+  levelType: "minecraft:normal",
   generateStructures: true,
   spawnAnimals: true,
   spawnMonsters: true,
@@ -518,25 +544,31 @@ const config = ref<ServerConfig>({
   playerIdleTimeout: 0,
 });
 
-function showStatus(message: string, type: 'success' | 'error' | 'info' = 'info') {
+function showStatus(
+  message: string,
+  type: "success" | "error" | "info" = "info"
+) {
   statusMessage.value = message;
   statusType.value = type;
   setTimeout(() => {
-    statusMessage.value = '';
+    statusMessage.value = "";
   }, 5000);
 }
 
 async function loadConfig() {
   loading.value = true;
   try {
-    const response = await axios.get('/api/config/server-properties');
-    
+    const response = await axios.get("/api/config/server-properties");
+
     if (response.data.success) {
       Object.assign(config.value, response.data.config);
-      showStatus('Configurações carregadas com sucesso!', 'success');
+      showStatus("Configurações carregadas com sucesso!", "success");
     }
   } catch (error: any) {
-    showStatus(error.response?.data?.error || 'Erro ao carregar configurações', 'error');
+    showStatus(
+      error.response?.data?.error || "Erro ao carregar configurações",
+      "error"
+    );
   } finally {
     loading.value = false;
   }
@@ -545,38 +577,47 @@ async function loadConfig() {
 async function saveConfig() {
   loading.value = true;
   try {
-    const response = await axios.post('/api/config/server-properties', {
-      action: 'save',
+    const response = await axios.post("/api/config/server-properties", {
+      action: "save",
       config: config.value,
     });
-    
+
     if (response.data.success) {
-      showStatus('Configurações salvas! Reinicie o servidor para aplicar.', 'success');
+      showStatus(
+        "Configurações salvas! Reinicie o servidor para aplicar.",
+        "success"
+      );
     }
   } catch (error: any) {
-    showStatus(error.response?.data?.error || 'Erro ao salvar configurações', 'error');
+    showStatus(
+      error.response?.data?.error || "Erro ao salvar configurações",
+      "error"
+    );
   } finally {
     loading.value = false;
   }
 }
 
 async function resetConfig() {
-  if (!confirm('Tem certeza que deseja restaurar as configurações padrão?')) {
+  if (!confirm("Tem certeza que deseja restaurar as configurações padrão?")) {
     return;
   }
 
   loading.value = true;
   try {
-    const response = await axios.post('/api/config/server-properties', {
-      action: 'reset',
+    const response = await axios.post("/api/config/server-properties", {
+      action: "reset",
     });
-    
+
     if (response.data.success) {
       await loadConfig();
-      showStatus('Configurações restauradas para o padrão!', 'success');
+      showStatus("Configurações restauradas para o padrão!", "success");
     }
   } catch (error: any) {
-    showStatus(error.response?.data?.error || 'Erro ao restaurar configurações', 'error');
+    showStatus(
+      error.response?.data?.error || "Erro ao restaurar configurações",
+      "error"
+    );
   } finally {
     loading.value = false;
   }
