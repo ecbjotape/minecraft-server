@@ -38,13 +38,18 @@ export function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
 
-// Get users from environment (format: USERNAME:HASHED_PASSWORD,USERNAME2:HASHED_PASSWORD2)
+// Get users from environment (format: USERNAME:SALT:HASH,USERNAME2:SALT:HASH)
 export function getUsers(): User[] {
   const usersEnv = process.env.AUTH_USERS || "";
   if (!usersEnv) return [];
 
   return usersEnv.split(",").map((userStr) => {
-    const [username, passwordHash] = userStr.split(":");
+    // Split only at first colon to get username, rest is salt:hash
+    const firstColonIndex = userStr.indexOf(":");
+    if (firstColonIndex === -1) return { username: "", passwordHash: "" };
+    
+    const username = userStr.substring(0, firstColonIndex);
+    const passwordHash = userStr.substring(firstColonIndex + 1); // salt:hash
     return { username, passwordHash };
   });
 }
@@ -98,8 +103,7 @@ export function requireAuth(
 
     // Get token from Authorization header or cookie
     const authHeader = req.headers.authorization;
-    const token =
-      authHeader?.replace("Bearer ", "") || req.cookies?.auth_token;
+    const token = authHeader?.replace("Bearer ", "") || req.cookies?.auth_token;
 
     if (!token || !validateSession(token)) {
       return res.status(401).json({
