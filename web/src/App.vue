@@ -1,6 +1,9 @@
 <template>
   <!-- Login Screen -->
-  <Login v-if="authEnabled && !isAuthenticated" @authenticated="onAuthenticated" />
+  <Login
+    v-if="authEnabled && !isAuthenticated"
+    @authenticated="onAuthenticated"
+  />
 
   <div v-else class="app-container">
     <header class="header">
@@ -628,8 +631,9 @@ const checkAuth = async () => {
     }
   } catch (error) {
     console.error("Auth check failed:", error);
-    authEnabled.value = false;
-    isAuthenticated.value = true; // Allow access if auth check fails
+    // Force authentication even if check fails
+    authEnabled.value = true;
+    isAuthenticated.value = false;
   }
 };
 
@@ -638,7 +642,7 @@ const onAuthenticated = async () => {
   if (token) {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   }
-  
+
   const storedUsername = localStorage.getItem("username");
   if (storedUsername) {
     username.value = storedUsername;
