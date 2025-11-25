@@ -67,6 +67,8 @@ async function whitelistHandler(req: VercelRequest, res: VercelResponse) {
       case "disable":
         command = `screen -S minecraft -p 0 -X stuff "whitelist off^M"`;
         break;
+      default:
+        return res.status(400).json({ error: "Ação inválida" });
     }
 
     const ssmCommand = new SendCommandCommand({

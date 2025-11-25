@@ -11,6 +11,7 @@ Transformamos o guia de segurança estático (`MINECRAFT_SECURITY.md`) em funcio
 **Endpoint:** `POST /api/whitelist`
 
 **Ações disponíveis:**
+
 - ✅ **Adicionar jogador**: `{ action: "add", player: "nome" }`
 - ❌ **Remover jogador**: `{ action: "remove", player: "nome" }`
 - 📋 **Listar jogadores**: `{ action: "list" }`
@@ -18,12 +19,14 @@ Transformamos o guia de segurança estático (`MINECRAFT_SECURITY.md`) em funcio
 - 🔓 **Desativar whitelist**: `{ action: "disable" }`
 
 **Segurança:**
+
 - Protegido com JWT authentication
 - Executa comandos via SSM no servidor
 - Aguarda confirmação de execução
 - Retorna output do comando
 
 **Interface:**
+
 - Toggle para ativar/desativar whitelist com badge de status
 - Campo de input + botão para adicionar jogadores
 - Lista de jogadores com botão de remoção individual
@@ -37,6 +40,7 @@ Transformamos o guia de segurança estático (`MINECRAFT_SECURITY.md`) em funcio
 **Endpoint:** `POST /api/backup`
 
 **Funcionalidades:**
+
 - Cria backup tar.gz com timestamp
 - Notifica jogadores in-game durante o backup
 - Executa `save-off` e `save-all` para garantir consistência
@@ -44,11 +48,13 @@ Transformamos o guia de segurança estático (`MINECRAFT_SECURITY.md`) em funcio
 - Timeout de 5 minutos para operações longas
 
 **Segurança:**
+
 - Protegido com JWT authentication
 - Executa script bash via SSM
 - Garante que o mundo está salvo antes do backup
 
 **Interface:**
+
 - Botão "Criar Backup Manual"
 - Informação sobre retenção de backups
 - Feedback de sucesso/erro
@@ -60,17 +66,20 @@ Transformamos o guia de segurança estático (`MINECRAFT_SECURITY.md`) em funcio
 **Endpoint:** `GET /api/logs?lines=50`
 
 **Funcionalidades:**
+
 - Busca últimas N linhas do log do servidor
 - Parâmetro `lines` configurável (50, 100, 200, 500)
 - Retorna array de linhas de log
 - Detecta se arquivo de log não existe
 
 **Segurança:**
+
 - Protegido com JWT authentication
 - Read-only access aos logs
 - Executa via SSM
 
 **Interface:**
+
 - Dropdown para selecionar quantidade de linhas
 - Botão de atualização manual
 - Container scrollável com tema escuro
@@ -93,6 +102,7 @@ Adicionamos um sistema de abas na interface principal:
 Componente Vue completo com três seções:
 
 #### **Whitelist Section**
+
 - Status visual (Ativo/Inativo)
 - Toggle para ativar/desativar
 - Input + botão para adicionar jogadores
@@ -101,11 +111,13 @@ Componente Vue completo com três seções:
 - Atualização manual
 
 #### **Backup Section**
+
 - Botão grande para criar backup
 - Informações sobre política de retenção
 - Feedback imediato
 
 #### **Logs Section**
+
 - Dropdown para quantidade de linhas
 - Container com scroll
 - Estilização de terminal (fundo escuro, fonte mono)
@@ -129,6 +141,7 @@ Todas as novas funcionalidades estão protegidas:
 ## 📁 Arquivos Criados
 
 ### **Backend (API)**
+
 ```
 api/
 ├── whitelist.ts     # Gerenciamento de whitelist
@@ -137,12 +150,14 @@ api/
 ```
 
 ### **Frontend (Web)**
+
 ```
 web/src/components/
 └── SecurityPanel.vue    # Painel de segurança completo
 ```
 
 ### **Utilitários**
+
 ```
 api/utils/
 └── ssm-helper.ts    # Atualizado com overload para extractCommandOutput
@@ -160,12 +175,14 @@ api/utils/
 ### **2. Gerenciar Whitelist**
 
 **Ativar whitelist:**
+
 ```
 1. Clique em "🔒 Ativar Whitelist"
 2. Status muda para "Ativo" (verde)
 ```
 
 **Adicionar jogador:**
+
 ```
 1. Digite o nome do jogador no campo
 2. Clique em "➕ Adicionar" ou pressione Enter
@@ -174,6 +191,7 @@ api/utils/
 ```
 
 **Remover jogador:**
+
 ```
 1. Encontre o jogador na lista
 2. Clique no "❌" ao lado do nome
@@ -181,6 +199,7 @@ api/utils/
 ```
 
 **Listar jogadores:**
+
 ```
 1. Clique em "🔄 Atualizar Lista"
 2. Lista é recarregada do servidor
@@ -211,26 +230,31 @@ api/utils/
 ### **Funcionalidades Adicionais Possíveis:**
 
 1. **📊 Lista de Backups**
+
    - GET /api/backups
    - Mostrar tamanho, data, e idade
    - Botão para baixar backup específico
 
 2. **⚙️ Restaurar Backup**
+
    - POST /api/restore-backup
    - Selecionar backup da lista
    - Confirmar restauração
 
 3. **🔌 Instalador de Plugins**
+
    - POST /api/install-plugin
    - Lista de plugins recomendados
    - One-click install
 
 4. **🛡️ Status do Firewall**
+
    - GET /api/firewall-status
    - Mostrar regras UFW ativas
    - Habilitar/desabilitar regras
 
 5. **📝 Logs em Tempo Real**
+
    - WebSocket connection
    - Stream de logs ao vivo
    - Filtros por tipo de evento
@@ -255,6 +279,7 @@ api/utils/
 ## 🐛 Troubleshooting
 
 ### **Whitelist não atualiza:**
+
 ```bash
 # Verificar se servidor está online
 # Verificar logs do SSM no AWS Console
@@ -262,6 +287,7 @@ api/utils/
 ```
 
 ### **Backup falha:**
+
 ```bash
 # Verificar espaço em disco: df -h
 # Verificar permissões: ls -la /home/ubuntu/backups/
@@ -269,6 +295,7 @@ api/utils/
 ```
 
 ### **Logs não aparecem:**
+
 ```bash
 # Verificar se arquivo existe:
 ls -la /home/ubuntu/minecraft-server/logs/latest.log
