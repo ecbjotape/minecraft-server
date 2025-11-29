@@ -25,7 +25,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
   if (!action) {
     return res.status(400).json({
       error: "Action is required",
-      availableActions: ["start-ec2", "start-server", "stop-ec2", "status"],
+      availableActions: ["start-ec2", "start-server", "stop-ec2", "restart", "status"],
     });
   }
 
@@ -155,6 +155,63 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      case "restart": {
+        if (req.method !== "POST") {
+          return res.status(405).json({ error: "Method not allowed" });
+        }
+
+        // Check EC2 instance state
+        const ec2Command = new DescribeInstancesCommand({
+          InstanceIds: [INSTANCE_ID],
+        });
+
+        const ec2Response = await ec2Client.send(ec2Command);
+        const instance = ec2Response.Reservations?.[0]?.Instances?.[0];
+
+        if (!instance) {
+          return res.status(404).json({
+            error: "Instância EC2 não encontrada",
+          });
+        }
+
+        const state = instance.State?.Name;
+
+        if (state !== "running") {
+          return res.status(409).json({
+            error: `A instância precisa estar rodando. Estado atual: ${state}`,
+            currentState: state,
+          });
+        }
+
+        const ssmClient = new SSMClient({
+          region: AWS_REGION,
+          credentials: {
+            accessKeyId: AWS_ACCESS_KEY_ID,
+            secretAccessKey: AWS_SECRET_ACCESS_KEY,
+          },
+        });
+
+        // Restart Minecraft server (kill screen session and start new one)
+        const command = new SendCommandCommand({
+          InstanceIds: [INSTANCE_ID],
+          DocumentName: "AWS-RunShellScript",
+          Parameters: {
+            commands: [
+              "cd /home/ubuntu/minecraft-server && screen -S minecraft -X quit 2>/dev/null; sleep 2; screen -dmS minecraft java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui && echo 'Server restarted successfully'",
+            ],
+          },
+        });
+
+        const response = await ssmClient.send(command);
+
+        return res.status(200).json({
+          success: true,
+          message: "Servidor Minecraft reiniciado com sucesso",
+          commandId: response.Command?.CommandId,
+          status: response.Command?.Status,
+        });
+      }
+
       case "status": {
         if (req.method !== "GET") {
           return res.status(405).json({ error: "Method not allowed" });
@@ -243,7 +300,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
       default:
         return res.status(400).json({
           error: "Invalid action",
-          availableActions: ["start-ec2", "start-server", "stop-ec2", "status"],
+          availableActions: ["start-ec2", "start-server", "stop-ec2", "restart", "status"],
         });
     }
   } catch (error) {

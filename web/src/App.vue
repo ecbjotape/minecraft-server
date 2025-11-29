@@ -178,6 +178,27 @@
               ></span>
             </button>
 
+            <!-- Restart Server Button -->
+            <button
+              @click="restartServer"
+              :disabled="
+                loading ||
+                ec2Status !== 'running' ||
+                minecraftStatus === 'offline'
+              "
+              class="control-button restart-server"
+            >
+              <span class="button-icon">🔄</span>
+              <span class="button-text">
+                <span class="button-title">Reiniciar Servidor</span>
+                <span class="button-subtitle">Aplica configurações</span>
+              </span>
+              <span
+                v-if="loading && currentAction === 'restart'"
+                class="spinner"
+              ></span>
+            </button>
+
             <!-- Stop EC2 Button -->
             <button
               @click="stopEC2"
@@ -545,6 +566,34 @@ const quickStart = async () => {
     const errorMessage =
       error.response?.data?.error || error.message || "Erro desconhecido";
     addLog("Erro no início rápido: " + errorMessage, "error");
+    showNotification(errorMessage, "error");
+    loading.value = false;
+    currentAction.value = "";
+  }
+};
+
+const restartServer = async () => {
+  if (!confirm("Tem certeza que deseja reiniciar o servidor Minecraft?")) return;
+
+  loading.value = true;
+  currentAction.value = "restart";
+  addLog("Reiniciando servidor Minecraft...", "warning");
+
+  try {
+    await axios.post("/api/server", { action: "restart" });
+
+    addLog("Servidor reiniciado! Aguardando inicialização...", "info");
+    showNotification("Servidor reiniciado com sucesso", "success");
+
+    setTimeout(() => {
+      checkStatus();
+      loading.value = false;
+      currentAction.value = "";
+    }, 10000); // Wait 10 seconds for server to restart
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.error || error.message || "Erro desconhecido";
+    addLog("Erro ao reiniciar servidor: " + errorMessage, "error");
     showNotification(errorMessage, "error");
     loading.value = false;
     currentAction.value = "";
@@ -1102,6 +1151,11 @@ onMounted(async () => {
 }
 
 .control-button.quick-start:hover:not(:disabled) {
+  border-color: var(--accent-yellow);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.control-button.restart-server:hover:not(:disabled) {
   border-color: var(--accent-yellow);
   background: rgba(251, 191, 36, 0.1);
 }
