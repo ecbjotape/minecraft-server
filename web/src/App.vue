@@ -393,7 +393,9 @@ const copied = ref(false);
 const isAuthenticated = ref(false);
 const authEnabled = ref(false);
 const username = ref("");
-const activeTab = ref<"dashboard" | "security" | "config" | "calculator">("dashboard");
+const activeTab = ref<"dashboard" | "security" | "config" | "calculator">(
+  "dashboard"
+);
 
 // Computed
 const serverStatus = computed(() => {

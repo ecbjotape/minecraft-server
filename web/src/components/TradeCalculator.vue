@@ -7,22 +7,30 @@
       <!-- Main Calculator -->
       <div class="calculator-section">
         <h3>Calculadora de Conversão</h3>
-        
+
         <div class="conversion-row">
           <div class="item-selector">
             <label>De:</label>
             <select v-model="fromItem" @change="calculate">
-              <optgroup v-for="category in categories" :key="category.name" :label="category.name">
-                <option v-for="item in category.items" :key="item.name" :value="item">
+              <optgroup
+                v-for="category in categories"
+                :key="category.name"
+                :label="category.name"
+              >
+                <option
+                  v-for="item in category.items"
+                  :key="item.name"
+                  :value="item"
+                >
                   {{ item.name }} ({{ item.value }})
                 </option>
               </optgroup>
             </select>
-            <input 
-              v-model.number="fromQuantity" 
+            <input
+              v-model.number="fromQuantity"
               @input="calculate"
-              type="number" 
-              min="1" 
+              type="number"
+              min="1"
               placeholder="Quantidade"
             />
           </div>
@@ -32,15 +40,23 @@
           <div class="item-selector">
             <label>Para:</label>
             <select v-model="toItem" @change="calculate">
-              <optgroup v-for="category in categories" :key="category.name" :label="category.name">
-                <option v-for="item in category.items" :key="item.name" :value="item">
+              <optgroup
+                v-for="category in categories"
+                :key="category.name"
+                :label="category.name"
+              >
+                <option
+                  v-for="item in category.items"
+                  :key="item.name"
+                  :value="item"
+                >
                   {{ item.name }} ({{ item.value }})
                 </option>
               </optgroup>
             </select>
-            <input 
-              v-model.number="toQuantity" 
-              type="number" 
+            <input
+              v-model.number="toQuantity"
+              type="number"
               readonly
               placeholder="Resultado"
             />
@@ -49,9 +65,8 @@
 
         <div v-if="result" class="result-box">
           <p class="result-text">
-            <strong>{{ fromQuantity }} {{ fromItem?.name }}</strong> 
-            (valor: {{ totalFromValue }})
-            equivale a aproximadamente 
+            <strong>{{ fromQuantity }} {{ fromItem?.name }}</strong>
+            (valor: {{ totalFromValue }}) equivale a aproximadamente
             <strong>{{ toQuantity }} {{ toItem?.name }}</strong>
             (valor: {{ totalToValue }})
           </p>
@@ -68,25 +83,27 @@
       <!-- Price Table -->
       <div class="price-table-section">
         <h3>📋 Tabela de Valores</h3>
-        
+
         <div class="search-box">
-          <input 
-            v-model="searchQuery" 
-            type="text" 
+          <input
+            v-model="searchQuery"
+            type="text"
             placeholder="🔍 Buscar item..."
           />
         </div>
 
         <div class="categories">
-          <div 
-            v-for="category in categories" 
-            :key="category.name" 
+          <div
+            v-for="category in categories"
+            :key="category.name"
             class="category-group"
           >
-            <h4 class="category-title">{{ category.icon }} {{ category.name }}</h4>
+            <h4 class="category-title">
+              {{ category.icon }} {{ category.name }}
+            </h4>
             <div class="items-grid">
-              <div 
-                v-for="item in filteredItems(category.items)" 
+              <div
+                v-for="item in filteredItems(category.items)"
                 :key="item.name"
                 class="item-card"
                 @click="quickSelect(item)"
@@ -140,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed } from "vue";
 
 interface Item {
   name: string;
@@ -155,80 +172,80 @@ interface Category {
 
 const categories = ref<Category[]>([
   {
-    name: 'Recursos Básicos',
-    icon: '🪵',
+    name: "Recursos Básicos",
+    icon: "🪵",
     items: [
-      { name: 'Madeira', value: 1 },
-      { name: 'Pedra', value: 1 },
-      { name: 'Carvão', value: 4 },
-      { name: 'Ferro', value: 10 },
-      { name: 'Redstone', value: 8 },
-      { name: 'Ouro', value: 25 },
-      { name: 'Lápis-Lazúli', value: 6 },
-      { name: 'Ametista', value: 30 },
-      { name: 'Quartzo', value: 12 },
-    ]
+      { name: "Madeira", value: 1 },
+      { name: "Pedra", value: 1 },
+      { name: "Carvão", value: 4 },
+      { name: "Ferro", value: 10 },
+      { name: "Redstone", value: 8 },
+      { name: "Ouro", value: 25 },
+      { name: "Lápis-Lazúli", value: 6 },
+      { name: "Ametista", value: 30 },
+      { name: "Quartzo", value: 12 },
+    ],
   },
   {
-    name: 'Itens Processados',
-    icon: '🧪',
+    name: "Itens Processados",
+    icon: "🧪",
     items: [
-      { name: 'Barra de Ferro', value: 15 },
-      { name: 'Barra de Ouro', value: 35 },
-      { name: 'Bala de Fogo', value: 25 },
-      { name: 'Tijolo de Pedra', value: 2 },
-      { name: 'Vidro', value: 4 },
-      { name: 'Pólvora', value: 20 },
-      { name: 'Livro', value: 30 },
-    ]
+      { name: "Barra de Ferro", value: 15 },
+      { name: "Barra de Ouro", value: 35 },
+      { name: "Bala de Fogo", value: 25 },
+      { name: "Tijolo de Pedra", value: 2 },
+      { name: "Vidro", value: 4 },
+      { name: "Pólvora", value: 20 },
+      { name: "Livro", value: 30 },
+    ],
   },
   {
-    name: 'Animais',
-    icon: '🥩',
+    name: "Animais",
+    icon: "🥩",
     items: [
-      { name: 'Galinha', value: 30 },
-      { name: 'Coelho', value: 40 },
-      { name: 'Ovelha', value: 50 },
-      { name: 'Porco', value: 55 },
-      { name: 'Vaca', value: 70 },
-      { name: 'Cavalo', value: 150 },
-      { name: 'Lhama', value: 120 },
-    ]
+      { name: "Galinha", value: 30 },
+      { name: "Coelho", value: 40 },
+      { name: "Ovelha", value: 50 },
+      { name: "Porco", value: 55 },
+      { name: "Vaca", value: 70 },
+      { name: "Cavalo", value: 150 },
+      { name: "Lhama", value: 120 },
+    ],
   },
   {
-    name: 'Agricultura / Farmáveis',
-    icon: '🌾',
+    name: "Agricultura / Farmáveis",
+    icon: "🌾",
     items: [
-      { name: 'Trigo', value: 3 },
-      { name: 'Cenoura', value: 2 },
-      { name: 'Batata', value: 2 },
-      { name: 'Cacto', value: 4 },
-      { name: 'Cana-de-Açúcar', value: 4 },
-      { name: 'Melancia (fatia)', value: 2 },
-      { name: 'Abóbora', value: 6 },
-      { name: 'Mel', value: 10 },
-      { name: 'Favo de Mel', value: 20 },
-    ]
+      { name: "Trigo", value: 3 },
+      { name: "Cenoura", value: 2 },
+      { name: "Batata", value: 2 },
+      { name: "Cacto", value: 4 },
+      { name: "Cana-de-Açúcar", value: 4 },
+      { name: "Melancia (fatia)", value: 2 },
+      { name: "Abóbora", value: 6 },
+      { name: "Mel", value: 10 },
+      { name: "Favo de Mel", value: 20 },
+    ],
   },
   {
-    name: 'Itens Raros',
-    icon: '🔥',
+    name: "Itens Raros",
+    icon: "🔥",
     items: [
-      { name: 'Diamante', value: 120 },
-      { name: 'Pérola do Ender', value: 90 },
-      { name: 'Membrana de Phantom', value: 60 },
-      { name: 'Netherite Scrap', value: 350 },
-      { name: 'Netherite Ingot', value: 1500 },
-      { name: 'Totem da Imortalidade', value: 2000 },
-    ]
-  }
+      { name: "Diamante", value: 120 },
+      { name: "Pérola do Ender", value: 90 },
+      { name: "Membrana de Phantom", value: 60 },
+      { name: "Netherite Scrap", value: 350 },
+      { name: "Netherite Ingot", value: 1500 },
+      { name: "Totem da Imortalidade", value: 2000 },
+    ],
+  },
 ]);
 
 const fromItem = ref<Item | null>(null);
 const toItem = ref<Item | null>(null);
 const fromQuantity = ref<number>(1);
 const toQuantity = ref<number>(0);
-const searchQuery = ref<string>('');
+const searchQuery = ref<string>("");
 const result = ref<boolean>(false);
 
 const totalFromValue = computed(() => {
@@ -256,13 +273,13 @@ const calculate = () => {
 const swapItems = () => {
   const tempItem = fromItem.value;
   const tempQuantity = fromQuantity.value;
-  
+
   fromItem.value = toItem.value;
   fromQuantity.value = toQuantity.value;
-  
+
   toItem.value = tempItem;
   toQuantity.value = tempQuantity;
-  
+
   calculate();
 };
 
@@ -277,29 +294,29 @@ const quickSelect = (item: Item) => {
 
 const filteredItems = (items: Item[]) => {
   if (!searchQuery.value) return items;
-  return items.filter(item => 
+  return items.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 };
 
 const loadExample = (index: number) => {
   const examples = [
-    { from: 'Ferro', fromQty: 10, to: 'Madeira', toQty: 0 },
-    { from: 'Vaca', fromQty: 1, to: 'Ferro', toQty: 0 },
-    { from: 'Cavalo', fromQty: 1, to: 'Ferro', toQty: 0 },
-    { from: 'Diamante', fromQty: 1, to: 'Ferro', toQty: 0 },
-    { from: 'Livro', fromQty: 1, to: 'Ferro', toQty: 0 },
-    { from: 'Netherite Ingot', fromQty: 1, to: 'Ferro', toQty: 0 },
+    { from: "Ferro", fromQty: 10, to: "Madeira", toQty: 0 },
+    { from: "Vaca", fromQty: 1, to: "Ferro", toQty: 0 },
+    { from: "Cavalo", fromQty: 1, to: "Ferro", toQty: 0 },
+    { from: "Diamante", fromQty: 1, to: "Ferro", toQty: 0 },
+    { from: "Livro", fromQty: 1, to: "Ferro", toQty: 0 },
+    { from: "Netherite Ingot", fromQty: 1, to: "Ferro", toQty: 0 },
   ];
 
   const example = examples[index];
-  
+
   // Find items
   let foundFrom: Item | null = null;
   let foundTo: Item | null = null;
-  
-  categories.value.forEach(category => {
-    category.items.forEach(item => {
+
+  categories.value.forEach((category) => {
+    category.items.forEach((item) => {
       if (item.name === example.from) foundFrom = item;
       if (item.name === example.to) foundTo = item;
     });
@@ -596,6 +613,11 @@ calculate();
     background: #0f172a;
     color: #f1f5f9;
     border-color: #334155;
+  }
+
+  .item-selector input[readonly] {
+    background: #1e293b;
+    color: #94a3b8;
   }
 
   .item-card {
