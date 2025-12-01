@@ -25,7 +25,13 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
   if (!action) {
     return res.status(400).json({
       error: "Action is required",
-      availableActions: ["start-ec2", "start-server", "stop-ec2", "restart", "status"],
+      availableActions: [
+        "start-ec2",
+        "start-server",
+        "stop-ec2",
+        "restart",
+        "status",
+      ],
     });
   }
 
@@ -300,7 +306,13 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
       default:
         return res.status(400).json({
           error: "Invalid action",
-          availableActions: ["start-ec2", "start-server", "stop-ec2", "restart", "status"],
+          availableActions: [
+            "start-ec2",
+            "start-server",
+            "stop-ec2",
+            "restart",
+            "status",
+          ],
         });
     }
   } catch (error) {

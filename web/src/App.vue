@@ -64,6 +64,12 @@
         >
           ⚙️ Configurações
         </button>
+        <button
+          @click="activeTab = 'calculator'"
+          :class="['tab-button', { active: activeTab === 'calculator' }]"
+        >
+          💰 Calculadora
+        </button>
       </div>
 
       <!-- Dashboard Tab -->
@@ -251,6 +257,11 @@
       <div v-show="activeTab === 'config'" class="tab-content">
         <ServerConfig />
       </div>
+
+      <!-- Calculator Tab -->
+      <div v-show="activeTab === 'calculator'" class="tab-content">
+        <TradeCalculator />
+      </div>
     </main>
 
     <!-- Notification -->
@@ -351,6 +362,7 @@ import axios from "axios";
 import Login from "./components/Login.vue";
 import SecurityPanel from "./components/SecurityPanel.vue";
 import ServerConfig from "./components/ServerConfig.vue";
+import TradeCalculator from "./components/TradeCalculator.vue";
 
 interface Log {
   time: string;
@@ -381,7 +393,7 @@ const copied = ref(false);
 const isAuthenticated = ref(false);
 const authEnabled = ref(false);
 const username = ref("");
-const activeTab = ref<"dashboard" | "security" | "config">("dashboard");
+const activeTab = ref<"dashboard" | "security" | "config" | "calculator">("dashboard");
 
 // Computed
 const serverStatus = computed(() => {
@@ -573,7 +585,8 @@ const quickStart = async () => {
 };
 
 const restartServer = async () => {
-  if (!confirm("Tem certeza que deseja reiniciar o servidor Minecraft?")) return;
+  if (!confirm("Tem certeza que deseja reiniciar o servidor Minecraft?"))
+    return;
 
   loading.value = true;
   currentAction.value = "restart";
