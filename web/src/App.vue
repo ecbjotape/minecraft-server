@@ -228,7 +228,12 @@
         <div class="logs-section">
           <div class="logs-header">
             <h2>Logs</h2>
-            <button @click="clearLogs" class="clear-logs-btn">Limpar</button>
+            <div class="logs-actions">
+              <button @click="debugServer" class="debug-btn" :disabled="loading || ec2Status !== 'running'">
+                🔍 Debug
+              </button>
+              <button @click="clearLogs" class="clear-logs-btn">Limpar</button>
+            </div>
           </div>
           <div class="logs-container">
             <div v-if="logs.length === 0" class="no-logs">
@@ -610,6 +615,39 @@ const restartServer = async () => {
       error.response?.data?.error || error.message || "Erro desconhecido";
     addLog("Erro ao reiniciar servidor: " + errorMessage, "error");
     showNotification(errorMessage, "error");
+    loading.value = false;
+    currentAction.value = "";
+  }
+};
+
+const debugServer = async () => {
+  loading.value = true;
+  currentAction.value = "debug";
+  addLog("🔍 Executando diagnóstico do servidor...", "info");
+
+  try {
+    const response = await axios.post("/api/server", { action: "debug" });
+    
+    if (response.data.success) {
+      const debugInfo = response.data.debug;
+      addLog("=== INFORMAÇÕES DE DEBUG ===", "info");
+      
+      // Split debug info into lines and add each as a log
+      const lines = debugInfo.split('\n');
+      lines.forEach((line: string) => {
+        if (line.trim()) {
+          addLog(line, "info");
+        }
+      });
+      
+      showNotification("Debug concluído! Verifique os logs.", "success");
+    }
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.error || error.message || "Erro desconhecido";
+    addLog("Erro ao executar debug: " + errorMessage, "error");
+    showNotification(errorMessage, "error");
+  } finally {
     loading.value = false;
     currentAction.value = "";
   }
@@ -1228,6 +1266,32 @@ onMounted(async () => {
 .logs-header h2 {
   font-size: 1.5rem;
   font-weight: 600;
+}
+
+.logs-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.debug-btn {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent-blue);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.debug-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.debug-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .clear-logs-btn {

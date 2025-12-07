@@ -30,6 +30,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
         "start-server",
         "stop-ec2",
         "restart",
+        "debug",
         "status",
       ],
     });
@@ -218,6 +219,55 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      case "debug": {
+        if (req.method !== "POST") {
+          return res.status(405).json({ error: "Method not allowed" });
+        }
+
+        const ssmClient = new SSMClient({
+          region: AWS_REGION,
+          credentials: {
+            accessKeyId: AWS_ACCESS_KEY_ID,
+            secretAccessKey: AWS_SECRET_ACCESS_KEY,
+          },
+        });
+
+        const debugCommand = new SendCommandCommand({
+          InstanceIds: [INSTANCE_ID],
+          DocumentName: "AWS-RunShellScript",
+          Parameters: {
+            commands: [
+              "echo '=== DEBUG INFO ===' && " +
+              "echo 'Working directory:' && pwd && " +
+              "echo 'Minecraft server files:' && ls -la /home/ubuntu/minecraft-server/ && " +
+              "echo 'Screen sessions:' && screen -list && " +
+              "echo 'Java processes:' && ps aux | grep java && " +
+              "echo 'Last 30 lines of server log:' && tail -n 30 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null || echo 'No log file found' && " +
+              "echo 'Memory usage:' && free -h && " +
+              "echo 'Disk space:' && df -h",
+            ],
+          },
+        });
+
+        const response = await ssmClient.send(debugCommand);
+        const commandId = response.Command?.CommandId;
+
+        if (!commandId) {
+          return res.status(500).json({ error: "Failed to get command ID" });
+        }
+
+        const result = await waitForSSMCommand(ssmClient, commandId, INSTANCE_ID);
+        const output = result
+          ? await extractCommandOutput(ssmClient, commandId, INSTANCE_ID)
+          : "";
+
+        return res.status(200).json({
+          success: true,
+          debug: output,
+          commandId,
+        });
+      }
+
       case "status": {
         if (req.method !== "GET") {
           return res.status(405).json({ error: "Method not allowed" });
@@ -311,6 +361,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
             "start-server",
             "stop-ec2",
             "restart",
+            "debug",
             "status",
           ],
         });
