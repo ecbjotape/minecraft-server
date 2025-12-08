@@ -147,7 +147,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
           DocumentName: "AWS-RunShellScript",
           Parameters: {
             commands: [
-              "cd /home/ubuntu/minecraft-server && (screen -list | grep -q 'minecraft' && echo 'Server already running' || (screen -dmS minecraft java -Xmx2048M -Xms2048M -jar minecraft_server.jar nogui && echo 'Server started successfully'))",
+              "cd /home/ubuntu/minecraft-server && (screen -list | grep -q 'minecraft' && echo 'Server already running' || (screen -dmS minecraft java -Xmx3072M -Xms3072M -jar minecraft_server.jar nogui && echo 'Server started successfully'))",
             ],
           },
         });
@@ -204,7 +204,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
           DocumentName: "AWS-RunShellScript",
           Parameters: {
             commands: [
-              "cd /home/ubuntu/minecraft-server && screen -S minecraft -X quit 2>/dev/null; sleep 2; screen -dmS minecraft java -Xmx2048M -Xms2048M -jar minecraft_server.jar nogui && echo 'Server restarted successfully'",
+              "cd /home/ubuntu/minecraft-server && screen -S minecraft -X quit 2>/dev/null; sleep 2; screen -dmS minecraft java -Xmx3072M -Xms3072M -jar minecraft_server.jar nogui && echo 'Server restarted successfully'",
             ],
           },
         });
