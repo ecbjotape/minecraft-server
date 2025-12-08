@@ -16,7 +16,7 @@ if screen -list | grep -q "minecraft"; then
   echo "AVISO: O servidor Minecraft já está rodando na sessão screen!"
 else
   echo "-> Iniciando servidor Minecraft em uma nova sessão screen..."
-  screen -dmS minecraft java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui
+  screen -dmS minecraft java -Xmx2048M -Xms2048M -jar minecraft_server.jar nogui
   echo "OK: Screen iniciada e servidor Minecraft rodando!"
 fi
 '

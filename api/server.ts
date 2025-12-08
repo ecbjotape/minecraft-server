@@ -147,7 +147,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
           DocumentName: "AWS-RunShellScript",
           Parameters: {
             commands: [
-              "cd /home/ubuntu/minecraft-server && (screen -list | grep -q 'minecraft' && echo 'Server already running' || (screen -dmS minecraft java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui && echo 'Server started successfully'))",
+              "cd /home/ubuntu/minecraft-server && (screen -list | grep -q 'minecraft' && echo 'Server already running' || (screen -dmS minecraft java -Xmx2048M -Xms2048M -jar minecraft_server.jar nogui && echo 'Server started successfully'))",
             ],
           },
         });
@@ -204,7 +204,7 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
           DocumentName: "AWS-RunShellScript",
           Parameters: {
             commands: [
-              "cd /home/ubuntu/minecraft-server && screen -S minecraft -X quit 2>/dev/null; sleep 2; screen -dmS minecraft java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui && echo 'Server restarted successfully'",
+              "cd /home/ubuntu/minecraft-server && screen -S minecraft -X quit 2>/dev/null; sleep 2; screen -dmS minecraft java -Xmx2048M -Xms2048M -jar minecraft_server.jar nogui && echo 'Server restarted successfully'",
             ],
           },
         });
@@ -238,13 +238,13 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
           Parameters: {
             commands: [
               "echo '=== DEBUG INFO ===' && " +
-              "echo 'Working directory:' && pwd && " +
-              "echo 'Minecraft server files:' && ls -la /home/ubuntu/minecraft-server/ && " +
-              "echo 'Screen sessions:' && screen -list && " +
-              "echo 'Java processes:' && ps aux | grep java && " +
-              "echo 'Last 30 lines of server log:' && tail -n 30 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null || echo 'No log file found' && " +
-              "echo 'Memory usage:' && free -h && " +
-              "echo 'Disk space:' && df -h",
+                "echo 'Working directory:' && pwd && " +
+                "echo 'Minecraft server files:' && ls -la /home/ubuntu/minecraft-server/ && " +
+                "echo 'Screen sessions:' && screen -list && " +
+                "echo 'Java processes:' && ps aux | grep java && " +
+                "echo 'Last 30 lines of server log:' && tail -n 30 /home/ubuntu/minecraft-server/logs/latest.log 2>/dev/null || echo 'No log file found' && " +
+                "echo 'Memory usage:' && free -h && " +
+                "echo 'Disk space:' && df -h",
             ],
           },
         });
@@ -256,7 +256,11 @@ async function serverHandler(req: VercelRequest, res: VercelResponse) {
           return res.status(500).json({ error: "Failed to get command ID" });
         }
 
-        const result = await waitForSSMCommand(ssmClient, commandId, INSTANCE_ID);
+        const result = await waitForSSMCommand(
+          ssmClient,
+          commandId,
+          INSTANCE_ID
+        );
         const output = result
           ? await extractCommandOutput(ssmClient, commandId, INSTANCE_ID)
           : "";

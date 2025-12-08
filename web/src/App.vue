@@ -229,7 +229,11 @@
           <div class="logs-header">
             <h2>Logs</h2>
             <div class="logs-actions">
-              <button @click="debugServer" class="debug-btn" :disabled="loading || ec2Status !== 'running'">
+              <button
+                @click="debugServer"
+                class="debug-btn"
+                :disabled="loading || ec2Status !== 'running'"
+              >
                 🔍 Debug
               </button>
               <button @click="clearLogs" class="clear-logs-btn">Limpar</button>
@@ -627,19 +631,19 @@ const debugServer = async () => {
 
   try {
     const response = await axios.post("/api/server", { action: "debug" });
-    
+
     if (response.data.success) {
       const debugInfo = response.data.debug;
       addLog("=== INFORMAÇÕES DE DEBUG ===", "info");
-      
+
       // Split debug info into lines and add each as a log
-      const lines = debugInfo.split('\n');
+      const lines = debugInfo.split("\n");
       lines.forEach((line: string) => {
         if (line.trim()) {
           addLog(line, "info");
         }
       });
-      
+
       showNotification("Debug concluído! Verifique os logs.", "success");
     }
   } catch (error: any) {
